@@ -12,7 +12,7 @@ Créez un fichier .env (à placer à la racine du projet) avec au minimum :
     PASSWORD="Mot_de_passe"
 ```
 
-Il est aussi possible de masquer des tuiles comme suit dans le dossier .env :
+Il est aussi possible de masquer des tuiles comme suit dans le fichier .env :
 ```
     HIDE_MAPS=tiles_online.js,tiles_local.php
 ```
