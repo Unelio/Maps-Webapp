@@ -1,0 +1,64 @@
+/* Supprimer marges et forcer la carte à prendre tout l’écran */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#map {
+  height: 100%;
+  width: 100%;
+}
+
+/* Décaler les boutons Leaflet pour petits écrans */
+@media (max-width: 768px) {
+  .leaflet-bottom.leaflet-right {
+    bottom: 70px;
+    right: 0;
+  }
+}
+
+/* Styles spécifiques au mode Web App (standalone) */
+body.standalone .leaflet-bottom.leaflet-right {
+  bottom: 58px;
+  right: 0;
+}
+
+/* Style du bouton de géolocalisation */
+.leaflet-control-locate {
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  cursor: pointer;
+  padding: 5px;
+}
+
+.leaflet-control-locate:hover {
+  background: #f0f0f0;
+}
+
+.leaflet-control-locate svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+/* Décaler les boutons Leaflet pour petits écrans */
+@media (max-width: 768px) {
+  .leaflet-control-locate {
+    bottom: 70px;
+    right: 0;
+  }
+}
+
+/* Styles spécifiques au mode Web App (standalone) */
+body.standalone .leaflet-control-locate {
+  bottom: 58px;
+  right: 0;
+}
+
+/* Désactivation des boutons de contrôle par défaut pour en mettre des plus sympa... */
+.leaflet-control-zoom,
+.leaflet-control-locate {
+  display: none !important;
+}

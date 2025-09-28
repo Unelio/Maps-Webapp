@@ -1,0 +1,16 @@
+{
+  "name": "Maps",
+  "short_name": "Maps",
+  "icons": [{
+        "src": "favicon.png",
+        "type": "image/png",
+        "sizes": "512x512"
+      }],
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5f5f5",
+  "theme_color": "#f5f5f5",
+  "lang": "fr"
+}

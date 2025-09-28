@@ -1,0 +1,6 @@
+/data/
+.env
+status-error.php
+
+**/*.mbtiles
+**/tiles_google_*.js
