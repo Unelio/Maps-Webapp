@@ -27,7 +27,7 @@ Il est aussi possible de masquer des cartes dans le fichier .env :
 
 WebApp
 --------------
-Dans le fichier sw.js, remplacez la variable suivant avec votre nom de domaine :
+Dans le fichier sw.js, remplacez la variable suivante avec votre nom de domaine :
 ```
 const CACHE = "votre_nom_de_domaine.com";
 ```
