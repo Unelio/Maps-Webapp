@@ -12,7 +12,7 @@ Créez un fichier .env (à placer à la racine du projet) avec au minimum :
     PASSWORD="Mot_de_passe"
 ```
 
-Vous devez configurer une carte par défaut dans le fichier .env :
+Vous pouvez configurer une carte par défaut dans le fichier .env :
 *(Les cartes se trouvent soit dans maps/maps_local soit dans maps/maps_online)*
 ```
     DEFAULT_MAP=tiles_online.js
