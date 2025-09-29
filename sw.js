@@ -2,7 +2,7 @@
 
 importScripts('workbox-sw.js');
 
-const CACHE = "maps.unelio.com";
+const CACHE = "votre_nom_de_domaine.com";
 
 // TODO: replace the following with the correct offline fallback page i.e.: const offlineFallbackPage = "offline.html";
 const offlineFallbackPage = "offline.php";

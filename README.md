@@ -1,7 +1,7 @@
 Maps-Webapp
 =================
 
-Utiliser une application 'single-user' afin de profiter de cartes de différentes sources
+Utilisez une application 'single-user' afin de profiter de cartes de différentes sources
 
 
 Configuration
@@ -24,6 +24,13 @@ Il est aussi possible de masquer des cartes dans le fichier .env :
     HIDE_MAPS=tiles_online.js,tiles_local.php
 ```
 
+
+WebApp
+--------------
+Dans le fichier sw.js, remplacez la variable suivant avec votre nom de domaine :
+```
+const CACHE = "votre_nom_de_domaine.com";
+```
 
 Installation
 --------------
