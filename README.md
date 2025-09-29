@@ -12,10 +12,18 @@ Créez un fichier .env (à placer à la racine du projet) avec au minimum :
     PASSWORD="Mot_de_passe"
 ```
 
-Il est aussi possible de masquer des tuiles comme suit dans le fichier .env :
+Vous devez configurer une carte par défaut dans le fichier .env :
+*(Les cartes se trouvent soit dans maps/maps_local soit dans maps/maps_online)*
+```
+    DEFAULT_MAP=tiles_online.js
+```
+
+Il est aussi possible de masquer des cartes dans le fichier .env :
+*(Séparez les entrées avec une virgule)*
 ```
     HIDE_MAPS=tiles_online.js,tiles_local.php
 ```
+
 
 Installation
 --------------

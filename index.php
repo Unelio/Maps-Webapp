@@ -99,14 +99,23 @@ foreach (glob($mapsDirLocal.'/tiles_*.php') as $file) {
   $maps[$filename] = $displayName;
 }
 
-// Carte par défaut
+// Carte à afficher par défaut
+$fallbackMap = 'tiles_osm_classic_online.js';
+$configMap = $array['DEFAULT_MAP'] ?? '';
 $defaultMap = '';
 if (!empty($maps)) {
-  if (array_key_exists('tiles_osm_classic_online.js', $maps)) {
-    $defaultMap = 'tiles_osm_classic_online.js';
-  } else {
-    $defaultMap = array_key_first($maps);
-  }
+    // Vérifie si la valeur de .env existe et correspond à une carte connue
+    if (!empty($configMap) && array_key_exists($configMap, $maps)) {
+        $defaultMap = $configMap;
+    } 
+    // Sinon on applique le fallback
+    elseif (!empty($fallbackMap) && array_key_exists($fallbackMap, $maps)) {
+        $defaultMap = $fallbackMap;
+    } 
+    // Sinon on prend la première carte trouvée
+    else {
+        $defaultMap = array_key_first($maps);
+    }
 }
 
 include __DIR__ . '/inc/head.php';
