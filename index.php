@@ -69,7 +69,6 @@ foreach (glob($mapsDirOnline.'/tiles_*.js') as $file) {
 }
 
 // Liste les cartes locales
-// Liste les cartes locales
 $mapsDirLocal = __DIR__ . '/maps/maps_local';
 foreach (glob($mapsDirLocal.'/tiles_*.php') as $file) {
   if (!is_file($file)) continue;
