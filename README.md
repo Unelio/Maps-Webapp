@@ -29,7 +29,7 @@ WebApp
 ---------------------------
 Dans le fichier sw.js, remplacez la variable suivante avec votre nom de domaine :
 ```
-const CACHE = "votre_nom_de_domaine.com";
+    const CACHE = "votre_nom_de_domaine.com";
 ```
 
 
@@ -46,9 +46,9 @@ Ajouter des cartes en ligne
 Pour ajouter des cartes en ligne dans le dossier "maps/maps_online", créez un fichier "tiles*.js",
 en suivant la logique suivante :
 ```
-L.tileLayer('https://tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png', {
-    maxZoom: 19
-}).addTo(map);
+    L.tileLayer('https://tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png', {
+        maxZoom: 19
+    }).addTo(map);
 ```
 
 
