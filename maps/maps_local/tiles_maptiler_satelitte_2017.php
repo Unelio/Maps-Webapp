@@ -1,27 +1,39 @@
 <?php
-// Chemin vers ton fichier MBTiles
-$dbFile = __DIR__ . "/maps/Maptiler_Satelitte_2017_Raster.mbtiles";
+// tiles.php
+$mbtilesFile = __DIR__ . "/maps/Maptiler_Satelitte_2017_Raster.mbtiles";
 
-// Connexion SQLite
-$db = new PDO("sqlite:" . $dbFile);
+if (!file_exists($mbtilesFile)) {
+    die("Fichier MBTiles introuvable !");
+}
 
-// Paramètres envoyés par Leaflet
-$z = intval($_GET['z']);
-$x = intval($_GET['x']);
-$y = intval($_GET['y']);
+try {
+    $db = new PDO("sqlite:" . $mbtilesFile);
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-// Inverser Y (MBTiles stocke avec origine en bas à gauche)
-$maxTile = pow(2, $z) - 1;
-$y = $maxTile - $y;
+    $z = intval($_GET['z']);
+    $x = intval($_GET['x']);
+    $y = intval($_GET['y']);
 
-// Requête pour récupérer la tuile
-$stmt = $db->prepare("SELECT tile_data FROM tiles WHERE zoom_level = ? AND tile_column = ? AND tile_row = ?");
-$stmt->execute([$z, $x, $y]);
-$row = $stmt->fetch(PDO::FETCH_ASSOC);
+    // Inversion Y pour MBTiles standard (origine en bas à gauche)
+    $y = pow(2, $z) - 1 - $y;
 
-if ($row) {
-    header("Content-Type: image/png");
-    echo $row['tile_data'];
-} else {
-    header("HTTP/1.0 404 Not Found");
+    $stmt = $db->prepare("SELECT tile_data FROM tiles WHERE zoom_level = ? AND tile_column = ? AND tile_row = ?");
+    $stmt->execute([$z, $x, $y]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($row && !empty($row['tile_data'])) {
+        header("Content-Type: image/png");
+        echo $row['tile_data'];
+    } else {
+        // Générer tuile vide si manquante
+        header("Content-Type: image/png");
+        $im = imagecreatetruecolor(256, 256);
+        $bg = imagecolorallocate($im, 220, 220, 255);
+        imagefill($im, 0, 0, $bg);
+        imagepng($im);
+        imagedestroy($im);
+    }
+} catch (Exception $e) {
+    header("Content-Type: text/plain");
+    echo "Erreur : " . $e->getMessage();
 }

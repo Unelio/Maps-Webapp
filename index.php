@@ -49,33 +49,13 @@ function parse_env_file(string $file): array {
 
 $array = parse_env_file(".env");
 
-$login = $array['LOGIN'];
-$password = $array['PASSWORD'];
+include __DIR__ . '/login.php';
 
 // Récupère la liste des cartes à masquer
 $hideMaps = [];
 if (!empty($array['HIDE_MAPS'])) {
   $hideMaps = array_map('trim', explode(',', $array['HIDE_MAPS']));
 }
-
-if (!$_SESSION["maps"]) {
-  $inputLogin = $_POST["login"] ?? '';
-  $inputPassword = $_POST["password"] ?? '';
-  
-  if ($inputLogin === $login && $inputPassword === $password) {
-      $_SESSION["maps"] = true;
-      header('Location: /');
-      exit;
-  } else if ($inputLogin || $inputPassword) {
-      $error = "Identifiant ou mot de passe incorrect";
-  }
-  
-  include __DIR__ . '/inc/head.php';
-  include __DIR__ . '/inc/login.php';
-  include __DIR__ . '/inc/end.php';
-  die();
-}
-$maps = [];
 
 // Liste les cartes en ligne
 $mapsDirOnline = __DIR__ . '/maps/maps_online';
@@ -89,11 +69,22 @@ foreach (glob($mapsDirOnline.'/tiles_*.js') as $file) {
 }
 
 // Liste les cartes locales
+// Liste les cartes locales
 $mapsDirLocal = __DIR__ . '/maps/maps_local';
 foreach (glob($mapsDirLocal.'/tiles_*.php') as $file) {
   if (!is_file($file)) continue;
   $filename = basename($file);
   if (in_array($filename, $hideMaps)) continue; // <-- Cacher des cartes
+  
+  // Vérifier la présence de la carte locale
+  $content = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+  if (!$content) continue;
+  $contentStr = implode("\n", $content);
+  if (!preg_match('/\$mbtilesFile\s*=\s*__DIR__\s*\.\s*"\/maps\/([^"]+)";/', $contentStr, $matches)) continue; // Chercher le nom de la carte
+  $mbtilesFile = $matches[1];
+  $mbtilesPath = __DIR__ . '/maps/maps_local/maps/' . $mbtilesFile;
+  if (!is_file($mbtilesPath)) continue; // <-- fichier absent, on ignore la carte
+  
   $name = preg_replace('/^tiles_|\.php$/','',$filename);
   $displayName = ucwords(str_replace('_',' ',$name));
   $maps[$filename] = $displayName;

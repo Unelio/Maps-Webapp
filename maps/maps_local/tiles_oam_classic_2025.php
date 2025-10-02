@@ -1,5 +1,5 @@
 <?php
-// tiles.php pour MBTiles OpenAndroMaps
+// tiles.php
 $mbtilesFile = __DIR__ . "/maps/Oam_Classic_2025_Raster.mbtiles";
 
 if (!file_exists($mbtilesFile)) {

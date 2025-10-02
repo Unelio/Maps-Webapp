@@ -1,11 +1,11 @@
 Maps-Webapp
-=================
+===================
 
 Utilisez une application 'single-user' afin de profiter de cartes de différentes sources
 
 
 Configuration
---------------
+-------------------
 Créez un fichier .env (à placer à la racine du projet) avec au minimum :
 ```
     LOGIN="Utilisateur"
@@ -26,12 +26,19 @@ Il est aussi possible de masquer des cartes dans le fichier .env :
 
 
 WebApp
---------------
+-------------------
 Dans le fichier sw.js, remplacez la variable suivante avec votre nom de domaine :
 ```
 const CACHE = "votre_nom_de_domaine.com";
 ```
 
+Ajouter des cartes
+-------------------
+Il est possible d'ajouter des cartes hors ligne au format Raster dont l'extension est mbtiles
+- La carte devra être ajoutée dans le dossier maps/maps_local/maps
+- Un fichier de configuration "tiles*.php" devra être créé et mis dans le dossier "maps/maps_local"
+*(NE PREND PAS EN CHARGE LES CARTES VECTORIELLES)*
+
 Installation
---------------
+-------------------
 Copier-coller les fichiers sur votre serveur
