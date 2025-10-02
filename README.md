@@ -37,6 +37,7 @@ Ajouter des cartes
 Il est possible d'ajouter des cartes hors ligne au format Raster dont l'extension est mbtiles
 - La carte devra être ajoutée dans le dossier maps/maps_local/maps
 - Un fichier de configuration "tiles*.php" devra être créé et mis dans le dossier "maps/maps_local"
+
 *(NE PREND PAS EN CHARGE LES CARTES VECTORIELLES)*
 
 Installation
