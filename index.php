@@ -102,8 +102,37 @@ include __DIR__ . '/inc/head.php';
       <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10"></circle>
         <circle cx="12" cy="12" r="3"></circle>
-      </svg>;
+      </svg>
     </button>
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+      const btn = document.getElementById("locateBtn");
+      if (!btn) return;
+
+      if (!navigator.geolocation) return;
+
+      let resolved = false;
+
+      navigator.geolocation.getCurrentPosition(
+        function () {
+          resolved = true;
+          btn.style.display = "block"; // on affiche le bouton
+        },
+        function () {
+          resolved = true;
+        },
+        { timeout: 1000 }
+      );
+
+      setTimeout(function () {
+        if (!resolved) {
+          // le bouton reste caché
+        }
+      }, 1200);
+
+    });
+    </script>
     <div id="footerZoom">
       <button id="zoomInBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">

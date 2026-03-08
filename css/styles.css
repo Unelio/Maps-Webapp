@@ -188,7 +188,7 @@ footer {
 
 #locateBtn {
   position: absolute;
-  display: block;
+  display: none;
   top: 0;
   left: 0;
   background: transparent;
