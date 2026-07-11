@@ -110,26 +110,33 @@ include __DIR__ . '/inc/head.php';
       const btn = document.getElementById("locateBtn");
       if (!btn) return;
 
-      if (!navigator.geolocation) return;
+      if (!("geolocation" in navigator)) return;
 
-      let resolved = false;
+      function showButton() {
+        btn.style.display = "block";
+      }
 
-      navigator.geolocation.getCurrentPosition(
-        function () {
-          resolved = true;
-          btn.style.display = "block"; // on affiche le bouton
-        },
-        function () {
-          resolved = true;
-        },
-        { timeout: 1000 }
-      );
+      function probeGeolocation() {
+        navigator.geolocation.getCurrentPosition(
+          function () {
+            showButton();
+          },
+          function () {
+            // On laisse le bouton caché si aucun point de géolocalisation réel n'est obtenu.
+          },
+          { timeout: 5000, maximumAge: 60000, enableHighAccuracy: false }
+        );
+      }
 
-      setTimeout(function () {
-        if (!resolved) {
-          // le bouton reste caché
-        }
-      }, 1200);
+      if (navigator.permissions && navigator.permissions.query) {
+        navigator.permissions.query({ name: "geolocation" }).then(function (status) {
+          if (status.state !== "denied") {
+            probeGeolocation();
+          }
+        }).catch(probeGeolocation);
+      } else {
+        probeGeolocation();
+      }
 
     });
     </script>
