@@ -13,6 +13,8 @@ include __DIR__ . '/login.php';
 
 // Récupère la liste des cartes à masquer
 $hideMaps = [];
+$maps = [];
+
 if (!empty($array['HIDE_MAPS'])) {
   $hideMaps = array_map('trim', explode(',', $array['HIDE_MAPS']));
 }
@@ -84,9 +86,9 @@ include __DIR__ . '/inc/head.php';
   <button id="mapBtn"></button>
 </header>
 
-<!-- Overlay -->
+<!-- Overlay choix des cartes-->
 <div id="mapOverlay">
-<span id="closeOverlay">&times;</span>
+<span id="closeMapOverlay">&times;</span>
   <ul>
     <?php foreach ($maps as $file => $name): $displayName = preg_replace('/online/i', '', $name); // supprime "online" ?>
     <li data-file="<?= htmlspecialchars($file) ?>"><?= htmlspecialchars($displayName) ?></li>

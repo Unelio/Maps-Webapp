@@ -1,7 +1,7 @@
-const overlay = document.getElementById('mapOverlay');
+const mapOverlay = document.getElementById('mapOverlay');
 const iframe = document.getElementById('mapFrame');
-const btn = document.getElementById('mapBtn');
-const closeOverlay = document.getElementById('closeOverlay');
+const mapBtn = document.getElementById('mapBtn');
+const closeMapOverlay = document.getElementById('closeMapOverlay');
 const mapTitle = document.getElementById('mapTitle');
 const mapIcon = document.getElementById('mapIcon');
 const mapZoom = document.getElementById('mapZoom');
@@ -18,47 +18,54 @@ function loadMap(file) {
 
 // Met à jour le titre et l'icône
 function updateTitle(file) {
-  const li = overlay.querySelector(`li[data-file="${file}"]`);
+  const li = mapOverlay.querySelector(`li[data-file="${file}"]`);
   if (li) {
     mapTitle.textContent = li.textContent.trim();
-    
+
     // Génère le logo à partir du nom du fichier
     const iconFile = file.endsWith('.js')
       ? '../maps/maps_online/logos/' + file.replace('.js','.png')
       : '../maps/maps_local/logos/' + file.replace('.php','.png');
+
     mapIcon.src = iconFile;
-    
+
     // Fallback si l'image n'existe pas
-    mapIcon.onerror = () => mapIcon.src = '../maps/default.png';
+    mapIcon.onerror = () => {
+      mapIcon.src = '../maps/default.png';
+    };
+
   } else {
     mapTitle.textContent = '';
     mapIcon.src = '';
   }
 }
 
-// Ouvrir l'overlay avec transition
-btn.addEventListener('click', () => {
-  overlay.classList.add('show');
+// Ouvrir l'overlay choix des cartes
+mapBtn.addEventListener('click', () => {
+  mapOverlay.classList.add('show');
 });
 
-// Fermer l'overlay
-closeOverlay.addEventListener('click', () => {
-  overlay.classList.remove('show');
+// Fermer l'overlay choix des cartes
+closeMapOverlay.addEventListener('click', () => {
+  mapOverlay.classList.remove('show');
 });
 
 // Sélection d'une carte
-overlay.querySelectorAll('li').forEach(li => {
+mapOverlay.querySelectorAll('li').forEach(li => {
   li.addEventListener('click', () => {
     const file = li.dataset.file;
+
     loadMap(file);
     updateTitle(file);
-    overlay.classList.remove('show'); // <-- NE PAS toucher à style.display
+
+    mapOverlay.classList.remove('show');
   });
 });
 
 // Charger la carte initiale
 const savedMap = localStorage.getItem('selectedMap');
-if (savedMap && overlay.querySelector(`li[data-file="${savedMap}"]`)) {
+
+if (savedMap && mapOverlay.querySelector(`li[data-file="${savedMap}"]`)) {
   loadMap(savedMap);
   updateTitle(savedMap);
 } else {
@@ -79,10 +86,16 @@ const zoomInBtn = document.getElementById('zoomInBtn');
 const zoomOutBtn = document.getElementById('zoomOutBtn');
 
 // Désactiver tant que l'iframe n'est pas chargée
-[locateBtn, zoomInBtn, zoomOutBtn].forEach(b => b.disabled = true);
+[locateBtn, zoomInBtn, zoomOutBtn].forEach(b => {
+  b.disabled = true;
+});
 
 iframe.addEventListener('load', () => {
-  [locateBtn, zoomInBtn, zoomOutBtn].forEach(b => b.disabled = false);
+
+  [locateBtn, zoomInBtn, zoomOutBtn].forEach(b => {
+    b.disabled = false;
+  });
+
 });
 
 function postToIframe(msg){
@@ -95,6 +108,14 @@ function postToIframe(msg){
   }
 }
 
-locateBtn.addEventListener('click', () => postToIframe({ type: 'locate' }));
-zoomInBtn.addEventListener('click', () => postToIframe({ type: 'zoomIn' }));
-zoomOutBtn.addEventListener('click', () => postToIframe({ type: 'zoomOut' }));
+locateBtn.addEventListener('click', () => {
+  postToIframe({ type: 'locate' });
+});
+
+zoomInBtn.addEventListener('click', () => {
+  postToIframe({ type: 'zoomIn' });
+});
+
+zoomOutBtn.addEventListener('click', () => {
+  postToIframe({ type: 'zoomOut' });
+});
