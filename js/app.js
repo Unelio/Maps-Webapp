@@ -1,10 +1,20 @@
 const mapOverlay = document.getElementById('mapOverlay');
+const schOverlay = document.getElementById('schOverlay');
 const iframe = document.getElementById('mapFrame');
 const mapBtn = document.getElementById('mapBtn');
+const mapSch = document.getElementById('mapSch');
 const closeMapOverlay = document.getElementById('closeMapOverlay');
+const closeSchOverlay = document.getElementById('closeSchOverlay');
 const mapTitle = document.getElementById('mapTitle');
 const mapIcon = document.getElementById('mapIcon');
 const mapZoom = document.getElementById('mapZoom');
+const schSearchInput = document.getElementById('schSearchInput');
+
+function selectMap(file, overlay) {
+  loadMap(file);
+  updateTitle(file);
+  overlay.classList.remove('show');
+}
 
 // Fonction pour charger une carte
 function loadMap(file) {
@@ -45,22 +55,49 @@ mapBtn.addEventListener('click', () => {
   mapOverlay.classList.add('show');
 });
 
+// Ouvrir l'overlay de recherche
+mapSch.addEventListener('click', () => {
+  schOverlay.classList.add('show');
+  if (schSearchInput) {
+    schSearchInput.value = '';
+    schSearchInput.focus();
+    schOverlay.querySelectorAll('li').forEach(li => li.classList.remove('hidden'));
+  }
+});
+
 // Fermer l'overlay choix des cartes
 closeMapOverlay.addEventListener('click', () => {
   mapOverlay.classList.remove('show');
 });
 
+// Fermer l'overlay de recherche
+closeSchOverlay.addEventListener('click', () => {
+  schOverlay.classList.remove('show');
+});
+
 // Sélection d'une carte
 mapOverlay.querySelectorAll('li').forEach(li => {
   li.addEventListener('click', () => {
-    const file = li.dataset.file;
-
-    loadMap(file);
-    updateTitle(file);
-
-    mapOverlay.classList.remove('show');
+    selectMap(li.dataset.file, mapOverlay);
   });
 });
+
+schOverlay.querySelectorAll('li').forEach(li => {
+  li.addEventListener('click', () => {
+    selectMap(li.dataset.file, schOverlay);
+  });
+});
+
+if (schSearchInput) {
+  schSearchInput.addEventListener('input', () => {
+    const query = schSearchInput.value.trim().toLowerCase();
+
+    schOverlay.querySelectorAll('li').forEach(li => {
+      const text = li.textContent.trim().toLowerCase();
+      li.classList.toggle('hidden', query !== '' && !text.includes(query));
+    });
+  });
+}
 
 // Charger la carte initiale
 const savedMap = localStorage.getItem('selectedMap');

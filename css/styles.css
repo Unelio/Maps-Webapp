@@ -154,17 +154,15 @@ header {
 }
 
 #schSearchInput:focus {
-  border-color: #1f77b1;
+  border-color: #ccc;
   box-shadow: 0 0 0 3px rgba(31,119,177,0.15);
 }
 
-#mapOverlay li.hidden,
-#schOverlay li.hidden {
+#mapOverlay li.hidden {
   display: none;
 }
 
-#mapOverlay li,
-#schOverlay li {
+#mapOverlay li {
   padding: 16px;
   margin: 8px 0;
   background: #e8e8e8;
@@ -178,8 +176,7 @@ header {
   outline: none !important;
 }
 
-#mapOverlay li:hover,
-#schOverlay li:hover {
+#mapOverlay li:hover {
   /* background: #ddd; */
   background: #1f77b1;
 }

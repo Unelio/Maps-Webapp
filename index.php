@@ -96,6 +96,14 @@ include __DIR__ . '/inc/head.php';
   </ul>
 </div>
 
+<!-- Overlay recherche -->
+<div id="schOverlay">
+<span id="closeSchOverlay">&times;</span>
+  <div id="schSearchPanel">
+    <input id="schSearchInput" type="search" placeholder="Rechercher une carte">
+  </div>
+</div>
+
 <!-- Cartes -->
 <iframe id="mapFrame"></iframe>
 
