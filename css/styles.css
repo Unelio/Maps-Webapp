@@ -70,29 +70,39 @@ header {
   margin-top: 2px;
 }
 
-#mapBtn {
-  background: none;
-  border: none;
-  padding: 0;
-  margin: 0;
-  cursor: pointer;
-  width: 50px;
-  height: 50px;
-  background-image: url('../img/maps.png');
-  background-size: contain;
+#mapBtn,
+#mapSch {
+  background-color: transparent;
   background-repeat: no-repeat;
   background-position: center;
   border: none;
-  background-size: 20px 20px; /* Taille exacte de l'image */
+  padding: 0;
+  margin: 0;
+  width: 50px;
+  height: 50px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent; /* Chrome/Android/iOS */
   -webkit-user-select: none;                /* iOS Safari */
   -webkit-touch-callout: none;              /* iOS Safari */
   outline: none;
+  flex-shrink: 0;
+  border-left: 1px dotted rgba(255, 255, 255, 0.3);
+}
+
+#mapBtn {
+  background-image: url('../img/maps.png');
+  background-size: 20px 20px; /* Taille exacte de l'image */
+}
+
+#mapSch {
+  background-image: url('../img/search.png');
+  background-size: 20px 20px;
+  margin-left: auto;
 }
 
 /* Overlay plein écran */
-#mapOverlay {
+#mapOverlay,
+#schOverlay {
   opacity: 0;                    /* invisible par défaut */
   visibility: hidden;            /* empêche les clics quand invisible */
   position: fixed;
@@ -110,12 +120,14 @@ header {
   transition: opacity 0.3s ease; /* transition fluide */
 }
 
-#mapOverlay.show {
+#mapOverlay.show,
+#schOverlay.show {
   opacity: 1;
   visibility: visible;
 }
 
-#mapOverlay ul {
+#mapOverlay ul,
+#schOverlay ul {
   list-style: none;
   padding: 0;
   margin: 0;
@@ -123,7 +135,36 @@ header {
   max-width: 400px;
 }
 
-#mapOverlay li {
+#schSearchPanel {
+  width: 80%;
+  max-width: 400px;
+  margin-bottom: 12px;
+}
+
+#schSearchInput {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 8px;
+  font-size: 18px;
+  background: rgba(255,255,255,0.95);
+  color: #222;
+  outline: none;
+}
+
+#schSearchInput:focus {
+  border-color: #1f77b1;
+  box-shadow: 0 0 0 3px rgba(31,119,177,0.15);
+}
+
+#mapOverlay li.hidden,
+#schOverlay li.hidden {
+  display: none;
+}
+
+#mapOverlay li,
+#schOverlay li {
   padding: 16px;
   margin: 8px 0;
   background: #e8e8e8;
@@ -137,13 +178,15 @@ header {
   outline: none !important;
 }
 
-#mapOverlay li:hover {
+#mapOverlay li:hover,
+#schOverlay li:hover {
   /* background: #ddd; */
   background: #1f77b1;
 }
 
 /* Fermer overlay (croix superposée à la carte) */
-#mapOverlay #closeOverlay {
+#mapOverlay #closeMapOverlay,
+#schOverlay #closeSchOverlay {
   position: absolute;
   top: 8px;
   right: 8px;

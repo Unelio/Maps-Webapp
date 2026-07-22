@@ -1,16 +1,28 @@
 {
   "name": "Maps",
   "short_name": "Maps",
-  "icons": [{
-        "src": "favicon.png",
+  "icons": [
+      {
+        "src": "/img/manifest/logo_192.png",
         "type": "image/png",
-        "sizes": "512x512"
+        "sizes": "192x192"
+      },
+      {
+        "src": "/img/manifest/logo_256.png",
+        "type": "image/png",
+        "sizes": "256x256"
+      },
+      {
+        "src": "/img/manifest/logo_512.png",
+        "type": "image/png",
+        "sizes": "512x512",
+        "purpose": "maskable"
       }],
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#f5f5f5",
-  "theme_color": "#f5f5f5",
+  "background_color": "",
+  "theme_color": "",
   "lang": "fr"
 }

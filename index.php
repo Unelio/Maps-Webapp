@@ -80,6 +80,7 @@ include __DIR__ . '/inc/head.php';
       <div id="mapZoom">Zoom : --</div>
     </div>
   </div>
+  <button id="mapSch"></button>
   <button id="mapBtn"></button>
 </header>
 
