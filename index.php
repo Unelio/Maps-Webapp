@@ -100,8 +100,12 @@ include __DIR__ . '/inc/head.php';
 <div id="schOverlay">
 <span id="closeSchOverlay">&times;</span>
   <div id="schSearchPanel">
-    <input id="schSearchInput" type="search" placeholder="Rechercher une carte">
+    <form id="schSearchForm">
+      <input id="schSearchInput" type="search" placeholder="Rechercher une adresse" autocomplete="off">
+      <button type="submit" id="schSearchSubmit" hidden>Rechercher</button>
+    </form>
   </div>
+  <div id="schSearchStatus" aria-live="polite"></div>
 </div>
 
 <!-- Cartes -->
@@ -170,6 +174,7 @@ include __DIR__ . '/inc/head.php';
   window.defaultMap = "<?= $defaultMap ?>";
 </script>
 <script src="js/app.js"></script>
+<script src="js/search.js"></script>
 
 </body>
 

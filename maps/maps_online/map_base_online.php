@@ -28,6 +28,8 @@ echo '<link rel="stylesheet" href="../../css/maps.css?t='.time().'">'."\n";
     var defaultLon = 2.347872;
     var defaultZoom = 5;
     var map = L.map('map', { zoomControl: false }).setView([defaultLat, defaultLon], defaultZoom);
+    var userMarker = null;
+    var searchMarker = null;
 
     // Fonction pour se centrer sur la géolocalisation
     function centerOnLocation(){
@@ -113,6 +115,29 @@ echo '<link rel="stylesheet" href="../../css/maps.css?t='.time().'">'."\n";
         }
       } else if (data.type === 'locate') {
         if (typeof centerOnLocation === 'function') centerOnLocation();
+      } else if (data.type === 'search') {
+        var lat = Number(data.lat);
+        var lng = Number(data.lng);
+
+        if (Number.isNaN(lat) || Number.isNaN(lng)) return;
+
+        var latlng = [lat, lng];
+        var targetZoom = map && typeof map.getMaxZoom === 'function' && map.getMaxZoom() ? Math.min(map.getMaxZoom(), 16) : 16;
+
+        if (searchMarker) {
+          searchMarker.setLatLng(latlng);
+        } else {
+          searchMarker = L.marker(latlng).addTo(map);
+        }
+
+        if (data.label) {
+          searchMarker.bindPopup(data.label);
+        }
+
+        map.flyTo(latlng, targetZoom);
+        if (data.label) {
+          searchMarker.openPopup();
+        }
       }
     });
   </script>

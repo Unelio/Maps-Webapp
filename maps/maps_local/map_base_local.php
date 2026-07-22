@@ -27,6 +27,8 @@ echo '<link rel="stylesheet" href="../../css/maps.css?t='.time().'">'."\n";
     
     // Initialisation de la carte
     var map = L.map('map', { zoomControl:false }).setView([48.854659,2.347872], 5);
+    var userMarker = null;
+    var searchMarker = null;
     
     // Contrôle de zoom en bas à droite
     L.control.zoom({ position:'bottomright' }).addTo(map);
@@ -125,6 +127,29 @@ echo '<link rel="stylesheet" href="../../css/maps.css?t='.time().'">'."\n";
         }
       } else if (data.type === 'locate') {
         if (typeof centerOnLocation === 'function') centerOnLocation();
+      } else if (data.type === 'search') {
+        var lat = Number(data.lat);
+        var lng = Number(data.lng);
+
+        if (Number.isNaN(lat) || Number.isNaN(lng)) return;
+
+        var latlng = [lat, lng];
+        var targetZoom = map && typeof map.getMaxZoom === 'function' && map.getMaxZoom() ? Math.min(map.getMaxZoom(), 16) : 16;
+
+        if (searchMarker) {
+          searchMarker.setLatLng(latlng);
+        } else {
+          searchMarker = L.marker(latlng).addTo(map);
+        }
+
+        if (data.label) {
+          searchMarker.bindPopup(data.label);
+        }
+
+        map.flyTo(latlng, targetZoom);
+        if (data.label) {
+          searchMarker.openPopup();
+        }
       }
     });
     

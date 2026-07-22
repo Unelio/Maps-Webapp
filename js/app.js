@@ -9,6 +9,7 @@ const mapTitle = document.getElementById('mapTitle');
 const mapIcon = document.getElementById('mapIcon');
 const mapZoom = document.getElementById('mapZoom');
 const schSearchInput = document.getElementById('schSearchInput');
+const schSearchStatus = document.getElementById('schSearchStatus');
 
 function selectMap(file, overlay) {
   loadMap(file);
@@ -61,7 +62,9 @@ mapSch.addEventListener('click', () => {
   if (schSearchInput) {
     schSearchInput.value = '';
     schSearchInput.focus();
-    schOverlay.querySelectorAll('li').forEach(li => li.classList.remove('hidden'));
+  }
+  if (schSearchStatus) {
+    schSearchStatus.textContent = '';
   }
 });
 
@@ -87,17 +90,6 @@ schOverlay.querySelectorAll('li').forEach(li => {
     selectMap(li.dataset.file, schOverlay);
   });
 });
-
-if (schSearchInput) {
-  schSearchInput.addEventListener('input', () => {
-    const query = schSearchInput.value.trim().toLowerCase();
-
-    schOverlay.querySelectorAll('li').forEach(li => {
-      const text = li.textContent.trim().toLowerCase();
-      li.classList.toggle('hidden', query !== '' && !text.includes(query));
-    });
-  });
-}
 
 // Charger la carte initiale
 const savedMap = localStorage.getItem('selectedMap');
@@ -144,6 +136,10 @@ function postToIframe(msg){
     iframe.contentWindow.postMessage(msg, '*');
   }
 }
+
+window.mapBridge = {
+  postToIframe
+};
 
 locateBtn.addEventListener('click', () => {
   postToIframe({ type: 'locate' });
