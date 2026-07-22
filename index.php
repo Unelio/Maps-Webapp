@@ -83,18 +83,9 @@ include __DIR__ . '/inc/head.php';
     </div>
   </div>
   <button id="mapSch"></button>
+  <button id="mapPoi"></button>
   <button id="mapBtn"></button>
 </header>
-
-<!-- Overlay choix des cartes-->
-<div id="mapOverlay">
-<span id="closeMapOverlay">&times;</span>
-  <ul>
-    <?php foreach ($maps as $file => $name): $displayName = preg_replace('/online/i', '', $name); // supprime "online" ?>
-    <li data-file="<?= htmlspecialchars($file) ?>"><?= htmlspecialchars($displayName) ?></li>
-    <?php endforeach; ?>
-  </ul>
-</div>
 
 <!-- Overlay recherche -->
 <div id="schOverlay">
@@ -106,6 +97,21 @@ include __DIR__ . '/inc/head.php';
     </form>
   </div>
   <div id="schSearchStatus" aria-live="polite"></div>
+</div>
+
+<!-- Overlay POI-->
+<div id="poiOverlay">
+<span id="closePoiOverlay">&times;</span>
+</div>
+
+<!-- Overlay choix des cartes-->
+<div id="mapOverlay">
+<span id="closeMapOverlay">&times;</span>
+  <ul>
+    <?php foreach ($maps as $file => $name): $displayName = preg_replace('/online/i', '', $name); // supprime "online" ?>
+    <li data-file="<?= htmlspecialchars($file) ?>"><?= htmlspecialchars($displayName) ?></li>
+    <?php endforeach; ?>
+  </ul>
 </div>
 
 <!-- Cartes -->

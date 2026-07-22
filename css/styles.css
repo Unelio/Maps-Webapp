@@ -51,11 +51,11 @@ header {
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 0 10px;
   color: #fff;
 }
 
 #mapInfo img {
-  margin-left: 10px;
   width: 24px;
   height: 24px;
   object-fit: contain;
@@ -71,7 +71,8 @@ header {
 }
 
 #mapBtn,
-#mapSch {
+#mapSch,
+#mapPoi {
   background-color: transparent;
   background-repeat: no-repeat;
   background-position: center;
@@ -92,7 +93,12 @@ header {
 
 #mapBtn {
   background-image: url('../img/maps.png');
-  background-size: 20px 20px; /* Taille exacte de l'image */
+  background-size: 20px 20px;
+}
+
+#mapPoi {
+  background-image: url('../img/poi.png');
+  background-size: 22px 22px;
 }
 
 #mapSch {
@@ -102,6 +108,7 @@ header {
 }
 
 /* Overlay plein écran */
+#poiOverlay,
 #mapOverlay,
 #schOverlay {
   opacity: 0;                    /* invisible par défaut */
@@ -121,14 +128,14 @@ header {
   transition: opacity 0.3s ease; /* transition fluide */
 }
 
+#poiOverlay.show,
 #mapOverlay.show,
 #schOverlay.show {
   opacity: 1;
   visibility: visible;
 }
 
-#mapOverlay ul,
-#schOverlay ul {
+#mapOverlay ul {
   list-style: none;
   padding: 0;
   margin: 0;
@@ -188,11 +195,11 @@ header {
 }
 
 #mapOverlay li:hover {
-  /* background: #ddd; */
   background: #1f77b1;
 }
 
 /* Fermer overlay */
+#poiOverlay #closePoiOverlay,
 #mapOverlay #closeMapOverlay,
 #schOverlay #closeSchOverlay {
   position: absolute;
@@ -273,6 +280,8 @@ footer {
   width: 102px;
   height: 50px;
   font-size: 0;
+  display: flex;
+  align-items: center;
 }
 
 #footerZoom button {
@@ -296,11 +305,15 @@ footer {
   color: #fff;
   font-weight: bolder;
   font-size: 50px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #footerZoom button svg {
   width: 22px;
   height: 22px;
+  display: block;
 }
 
 

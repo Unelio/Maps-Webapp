@@ -3,8 +3,11 @@ const schOverlay = document.getElementById('schOverlay');
 const iframe = document.getElementById('mapFrame');
 const mapBtn = document.getElementById('mapBtn');
 const mapSch = document.getElementById('mapSch');
+const mapPoi = document.getElementById('mapPoi');
+const poiOverlay = document.getElementById('poiOverlay');
 const closeMapOverlay = document.getElementById('closeMapOverlay');
 const closeSchOverlay = document.getElementById('closeSchOverlay');
+const closePoiOverlay = document.getElementById('closePoiOverlay');
 const mapTitle = document.getElementById('mapTitle');
 const mapIcon = document.getElementById('mapIcon');
 const mapZoom = document.getElementById('mapZoom');
@@ -68,6 +71,11 @@ mapSch.addEventListener('click', () => {
   }
 });
 
+// Ouvrir l'overlay des points d'intérêt
+mapPoi.addEventListener('click', () => {
+  poiOverlay.classList.add('show');
+});
+
 // Fermer l'overlay choix des cartes
 closeMapOverlay.addEventListener('click', () => {
   mapOverlay.classList.remove('show');
@@ -76,6 +84,11 @@ closeMapOverlay.addEventListener('click', () => {
 // Fermer l'overlay de recherche
 closeSchOverlay.addEventListener('click', () => {
   schOverlay.classList.remove('show');
+});
+
+// Fermer l'overlay des points d'intérêt
+closePoiOverlay.addEventListener('click', () => {
+  poiOverlay.classList.remove('show');
 });
 
 // Sélection d'une carte
