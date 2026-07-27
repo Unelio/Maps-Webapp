@@ -38,7 +38,7 @@ if [ $? -eq 0 ]; then
 
     "$DIR_SCRIPT/Maps-bin" > /dev/null 2>&1
 else
-    zenity --error --width="300" --title="Maps" --text "\nVeuillez vérifier que vous êtes connecté à internet !" --window-icon="$HOME/.nativefier/Maps-linux-x64/resources/app/icon.png"
+    zenity --error --width="300" --title="Maps" --text "\nVeuillez vérifier que vous êtes connecté à internet !" --window-icon="$DIR_SCRIPT/resources/app/icon.png"
 fi
 
 exit 0
