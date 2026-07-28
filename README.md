@@ -1,10 +1,10 @@
 # Maps-Webapp
 
-Application web de cartes pensée pour un usage mono-utilisateur, avec plusieurs sources de cartes au choix.
+**Maps-webapp** est une application web de cartographie destinée à un utilisateur unique, prenant en charge plusieurs fournisseurs de cartes.
 
 ## Installation
 
-Copiez les fichiers sur votre serveur web, puis configurez l'authentification et le cache si nécessaire.
+Copiez les fichiers sur votre serveur web, puis configurez l'authentification.
 
 ## Prérequis
 
