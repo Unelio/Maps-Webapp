@@ -29,7 +29,8 @@
 <meta name="msapplication-TileColor" content="#fff">
 <meta name="msapplication-TileImage" content="favicon.png">
 
-<link rel="stylesheet" type="text/css" href="fonts/fontello.css">
+<link rel="stylesheet" type="text/css" href="fonts/roboto/roboto.css">
+<link rel="stylesheet" type="text/css" href="fonts/fontello/fontello.css">
 
 <?php
 echo '<link rel="stylesheet" href="css/styles.css?t='.time().'">'."\n";

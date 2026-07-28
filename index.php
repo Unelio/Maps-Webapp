@@ -91,6 +91,9 @@ include __DIR__ . '/inc/head.php';
 <div id="schOverlay">
 <span id="closeSchOverlay">&times;</span>
   <div id="schSearchPanel">
+    <div class="sch-header">
+      <h2>Recherche</h2>
+    </div>
     <form id="schSearchForm">
       <input id="schSearchInput" type="search" placeholder="Rechercher une adresse" autocomplete="off">
       <button type="submit" id="schSearchSubmit" hidden>Rechercher</button>
@@ -102,16 +105,23 @@ include __DIR__ . '/inc/head.php';
 <!-- Overlay POI-->
 <div id="poiOverlay">
 <span id="closePoiOverlay">&times;</span>
+<?php include __DIR__ . '/inc/poi.php'; ?>
 </div>
 
 <!-- Overlay choix des cartes-->
 <div id="mapOverlay">
 <span id="closeMapOverlay">&times;</span>
-  <ul>
-    <?php foreach ($maps as $file => $name): $displayName = preg_replace('/online/i', '', $name); // supprime "online" ?>
-    <li data-file="<?= htmlspecialchars($file) ?>"><?= htmlspecialchars($displayName) ?></li>
-    <?php endforeach; ?>
-  </ul>
+  <div class="map-panel">
+    <div class="map-header">
+      <h2>Cartes</h2>
+      <div class="map-summary"><?= count($maps) ?> carte(s)</div>
+    </div>
+    <ul>
+      <?php foreach ($maps as $file => $name): $displayName = preg_replace('/online/i', '', $name); // supprime "online" ?>
+      <li data-file="<?= htmlspecialchars($file) ?>"><?= htmlspecialchars($displayName) ?></li>
+      <?php endforeach; ?>
+    </ul>
+  </div>
 </div>
 
 <!-- Cartes -->
@@ -180,6 +190,7 @@ include __DIR__ . '/inc/head.php';
   window.defaultMap = "<?= $defaultMap ?>";
 </script>
 <script src="js/app.js"></script>
+<script src="js/poi.js"></script>
 <script src="js/search.js"></script>
 
 </body>

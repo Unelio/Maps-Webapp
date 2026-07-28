@@ -30,6 +30,62 @@ echo '<link rel="stylesheet" href="../../css/maps.css?t='.time().'">'."\n";
     var map = L.map('map', { zoomControl: false }).setView([defaultLat, defaultLon], defaultZoom);
     var userMarker = null;
     var searchMarker = null;
+    var poiLayers = {};
+    var poiMarkers = {};
+
+    function escapeHtml(text) {
+      return String(text || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function syncPoiFile(data) {
+      if (!data || !data.file) return;
+
+      var fileKey = data.file;
+      var points = Array.isArray(data.points) ? data.points : [];
+
+      if (!poiLayers[fileKey]) {
+        poiLayers[fileKey] = L.layerGroup().addTo(map);
+      } else {
+        poiLayers[fileKey].clearLayers();
+      }
+
+      poiMarkers[fileKey] = {};
+
+      points.forEach(function(point) {
+        var lat = Number(point && point.lat);
+        var lng = Number(point && point.lng);
+
+        if (Number.isNaN(lat) || Number.isNaN(lng)) return;
+
+        var marker = L.marker([lat, lng]);
+        var popupParts = [];
+
+        if (point.label) {
+          popupParts.push('<strong>' + escapeHtml(point.label) + '</strong>');
+        }
+        if (point.description) {
+          popupParts.push('<div>' + escapeHtml(point.description) + '</div>');
+        }
+        if (point.time) {
+          popupParts.push('<div>' + escapeHtml(point.time) + '</div>');
+        }
+
+        if (popupParts.length) {
+          marker.bindPopup(popupParts.join('<br>'));
+        }
+
+        poiMarkers[fileKey][point.id] = marker;
+
+        if (point.visible !== false) {
+          marker.addTo(poiLayers[fileKey]);
+        }
+      });
+    }
 
     // Fonction pour se centrer sur la géolocalisation
     function centerOnLocation(){
@@ -138,6 +194,8 @@ echo '<link rel="stylesheet" href="../../css/maps.css?t='.time().'">'."\n";
         if (data.label) {
           searchMarker.openPopup();
         }
+      } else if (data.type === 'poiSyncFile') {
+        syncPoiFile(data);
       }
     });
   </script>
