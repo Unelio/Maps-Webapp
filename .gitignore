@@ -1,4 +1,5 @@
-/data/*
+/data/*.gpx
+/data/*.json
 /.vscode/
 .env
 status-error.php
