@@ -1,6 +1,6 @@
 # Maps-Webapp
 
-**Maps-webapp** est une application web de cartographie destinée à un utilisateur unique, prenant en charge plusieurs fournisseurs de cartes.
+**Maps-Webapp** est une application web de cartographie destinée à un utilisateur unique, prenant en charge plusieurs fournisseurs de cartes.
 
 ## Installation
 
