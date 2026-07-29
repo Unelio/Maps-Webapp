@@ -35,7 +35,7 @@ class SearchManager
         CURLOPT_CONNECTTIMEOUT => 5,
         CURLOPT_HTTPHEADER => [
           'Accept: application/json',
-          'User-Agent: Maps-Webapp/1.0 (+local)',
+          'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         ],
       ]);
 
@@ -62,7 +62,7 @@ class SearchManager
         'timeout' => 10,
         'header' => implode("\r\n", [
           'Accept: application/json',
-          'User-Agent: Maps-Webapp/1.0 (+local)',
+          'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         ]) . "\r\n",
       ],
     ]);

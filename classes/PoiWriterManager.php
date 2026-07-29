@@ -136,7 +136,7 @@ class PoiWriterManager
 
     $root = $document->createElementNS('http://www.topografix.com/GPX/1/1', 'gpx');
     $root->setAttribute('version', '1.1');
-    $root->setAttribute('creator', 'Maps-Webapp');
+    $root->setAttribute('creator', 'Maps');
 
     $metadata = $document->createElementNS('http://www.topografix.com/GPX/1/1', 'metadata');
     $nameNode = $document->createElementNS('http://www.topografix.com/GPX/1/1', 'name');
