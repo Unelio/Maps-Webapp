@@ -158,10 +158,8 @@ class AppController
   {
     $poiPanelHtml = '<div class="poi-panel">'
       . '<div class="poi-header">'
-      . '<div>'
       . '<h2>Points d\'intérêt</h2>'
       . '<div class="poi-summary">' . count($poiFiles) . ' dossier(s)</div>'
-      . '</div>'
       . '</div>';
 
     if (empty($poiFiles)) {
