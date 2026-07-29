@@ -7,7 +7,13 @@ importScripts('workbox-sw.js');
 const CACHE = `${'localhost'}`;
 
 // Page affichée quand la navigation réseau échoue
-const offlineFallbackPage = "offline.php";
+const offlineFallbackPage = "offline.html";
+
+// Liste des ressources indispensables pour le mode hors-ligne
+const offlineAssets = [
+  offlineFallbackPage,
+  "favicon.png"
+];
 
 self.addEventListener("message", (event) => {
   // Permet de forcer l'activation immédiate du nouveau service worker
@@ -16,11 +22,11 @@ self.addEventListener("message", (event) => {
   }
 });
 
-self.addEventListener('install', async (event) => {
-  // Précharge la page de secours dans le cache dès l'installation
+self.addEventListener('install', (event) => {
+  // Précharge la page de secours et le favicon dans le cache dès l'installation
   event.waitUntil(
     caches.open(CACHE)
-      .then((cache) => cache.add(offlineFallbackPage))
+      .then((cache) => cache.addAll(offlineAssets))
   );
 });
 
@@ -51,5 +57,10 @@ self.addEventListener('fetch', (event) => {
         return cachedResp;
       }
     })());
+  } else if (event.request.destination === 'image' && event.request.url.includes('favicon.png')) {
+    // Permet de servir le favicon depuis le cache si le réseau coupe
+    event.respondWith(
+      caches.open(CACHE).then((cache) => cache.match('favicon.png'))
+    );
   }
 });
