@@ -28,17 +28,24 @@ Les cartes hors ligne fonctionnent seulement avec le format raster `.mbtiles`.
 - Placez le fichier de carte `.mbtiles` dans `data/maps/maps_local/maps`
 - Vous pouvez aussi personnaliser le logo avec `logo=logos/mon_logo.png` dans le fichier `tiles_*.txt`
 
+Exemple :
+
+```txt
+logo=logos/oam.png
+mbtiles=maps/Oam_Classic_2025_Raster.mbtiles
+```
+
 Les cartes vectorielles ne sont pas prises en charge.
 
 ## Ajouter des cartes en ligne
 
-- Pour ajouter une carte en ligne, créez un fichier `tiles*.js` dans `data/maps/maps_online`.
+- Pour ajouter une carte en ligne, créez un fichier `tiles_*.js` dans `data/maps/maps_online`.
 - Vous pouvez aussi personnaliser le logo avec un commentaire en tête de fichier: `// logo=logos/mon_logo.png`
 
 Exemple :
 
 ```js
-// logo=logos/tiles_openrailwaymap_train_online.png
+// logo=logos/osm.png
 L.tileLayer('https://tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png', {
     maxZoom: 19
 }).addTo(map);
