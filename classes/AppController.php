@@ -132,7 +132,10 @@ class AppController
   {
     $mapManager = new MapManager($this->baseDir, $env);
     $maps = $mapManager->getMaps();
-    $defaultMap = $this->resolveDefaultMap($mapManager, $maps);
+    $settings = $this->readSettings();
+    $defaultMap = $this->resolveDefaultMap($mapManager, $maps, $settings);
+    $defaultZoom = $this->resolveDefaultZoom($settings);
+    $defaultCenter = $this->resolveDefaultCenter($settings);
 
     $poiManager = new PoiManager($this->baseDir);
     $poiFiles = $poiManager->getCatalog();
@@ -142,6 +145,8 @@ class AppController
     echo $templateRenderer->render($this->baseDir . '/assets/html/index.html', [
       'ASSET_VERSION' => time(),
       'DEFAULT_MAP_JSON' => json_encode($defaultMap, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+      'DEFAULT_ZOOM_JSON' => json_encode($defaultZoom, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+      'DEFAULT_CENTER_JSON' => json_encode($defaultCenter, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
       'MAPS_COUNT' => (string)count($maps),
       'MAP_OPTIONS' => $this->buildMapOptionsHtml($maps),
       'POI_PANEL' => $this->buildPoiPanelHtml($poiFiles),
@@ -267,15 +272,28 @@ class AppController
     return $mapOptionsHtml;
   }
 
-  private function resolveDefaultMap(MapManager $mapManager, array $maps): string
+  private function resolveDefaultMap(MapManager $mapManager, array $maps, array $settings): string
   {
-    $savedMap = $this->loadSavedMap($maps);
+    $savedMap = $this->loadSavedMap($maps, $settings);
 
     if ($savedMap !== '') {
       return $savedMap;
     }
 
     return $mapManager->getDefaultMap($maps);
+  }
+
+  private function resolveDefaultZoom(array $settings): int
+  {
+    return $this->normalizeZoom($settings['zoom'] ?? null, 5);
+  }
+
+  private function resolveDefaultCenter(array $settings): array
+  {
+    return [
+      'lat' => $this->normalizeLatitude($settings['centerLat'] ?? null, 48.854659),
+      'lng' => $this->normalizeLongitude($settings['centerLng'] ?? null, 2.347872),
+    ];
   }
 
   private function handleSettingsAction(string $requestMethod): void
@@ -309,6 +327,10 @@ class AppController
 
     $settings = $this->readSettings();
     $settings['selectedMap'] = $mapFile;
+    $settings['zoom'] = $this->normalizeZoom($payload['zoom'] ?? ($settings['zoom'] ?? null), (int)($settings['zoom'] ?? 5));
+    $settings['centerLat'] = $this->normalizeLatitude($payload['centerLat'] ?? ($settings['centerLat'] ?? null), 48.854659);
+    $settings['centerLng'] = $this->normalizeLongitude($payload['centerLng'] ?? ($settings['centerLng'] ?? null), 2.347872);
+    $settings['version'] = 2;
 
     if ($this->writeSettings($settings)) {
       echo json_encode(['ok' => true], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -319,9 +341,8 @@ class AppController
     echo json_encode(['ok' => false, 'error' => 'save_failed'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
   }
 
-  private function loadSavedMap(array $maps): string
+  private function loadSavedMap(array $maps, array $settings): string
   {
-    $settings = $this->readSettings();
     $savedMap = basename((string)($settings['selectedMap'] ?? ''));
 
     if ($savedMap !== '' && array_key_exists($savedMap, $maps)) {
@@ -336,20 +357,53 @@ class AppController
     $settingsPath = $this->settingsPath();
 
     if (!is_readable($settingsPath)) {
-      return ['version' => 1, 'selectedMap' => ''];
+      return ['version' => 2, 'selectedMap' => '', 'zoom' => 5, 'centerLat' => 48.854659, 'centerLng' => 2.347872];
     }
 
     $content = file_get_contents($settingsPath);
     if ($content === false || trim($content) === '') {
-      return ['version' => 1, 'selectedMap' => ''];
+      return ['version' => 2, 'selectedMap' => '', 'zoom' => 5, 'centerLat' => 48.854659, 'centerLng' => 2.347872];
     }
 
     $settings = json_decode($content, true);
     if (!is_array($settings)) {
-      return ['version' => 1, 'selectedMap' => ''];
+      return ['version' => 2, 'selectedMap' => '', 'zoom' => 5, 'centerLat' => 48.854659, 'centerLng' => 2.347872];
     }
 
-    return array_merge(['version' => 1, 'selectedMap' => ''], $settings);
+    return array_merge(['version' => 2, 'selectedMap' => '', 'zoom' => 5, 'centerLat' => 48.854659, 'centerLng' => 2.347872], $settings);
+  }
+
+  private function normalizeZoom($value, int $fallback): int
+  {
+    $zoom = filter_var($value, FILTER_VALIDATE_INT);
+
+    if ($zoom === false) {
+      return $fallback;
+    }
+
+    return max(0, min(22, (int)$zoom));
+  }
+
+  private function normalizeLatitude($value, float $fallback): float
+  {
+    $lat = filter_var($value, FILTER_VALIDATE_FLOAT);
+
+    if ($lat === false) {
+      return $fallback;
+    }
+
+    return max(-90.0, min(90.0, (float)$lat));
+  }
+
+  private function normalizeLongitude($value, float $fallback): float
+  {
+    $lng = filter_var($value, FILTER_VALIDATE_FLOAT);
+
+    if ($lng === false) {
+      return $fallback;
+    }
+
+    return max(-180.0, min(180.0, (float)$lng));
   }
 
   private function writeSettings(array $settings): bool

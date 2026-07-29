@@ -15,15 +15,48 @@
     (function () {
       var params = new URLSearchParams(window.location.search);
       var tileScript = params.get('tile') || '';
+      var initialLat = Number(params.get('lat'));
+      var initialLng = Number(params.get('lng'));
 
       if (window.matchMedia('(display-mode: standalone)').matches) {
         document.body.classList.add('standalone');
       }
 
+      function normalizeCoordinate(value, fallback, minValue, maxValue) {
+        var numericValue = Number(value);
+
+        if (!Number.isFinite(numericValue)) {
+          return fallback;
+        }
+
+        return Math.max(minValue, Math.min(maxValue, numericValue));
+      }
+
+      function normalizeCenter(latValue, lngValue, fallback) {
+        var centerFallback = fallback || { lat: 48.854659, lng: 2.347872 };
+
+        return {
+          lat: normalizeCoordinate(latValue, centerFallback.lat, -90, 90),
+          lng: normalizeCoordinate(lngValue, centerFallback.lng, -180, 180),
+        };
+      }
+
       var defaultLat = 48.854659;
       var defaultLon = 2.347872;
       var defaultZoom = 5;
-      var map = L.map('map', { zoomControl: false }).setView([defaultLat, defaultLon], defaultZoom);
+      var initialCenter = normalizeCenter(initialLat, initialLng, { lat: defaultLat, lng: defaultLon });
+      function normalizeZoom(value, fallback) {
+        var numericValue = Number(value);
+
+        if (!Number.isFinite(numericValue)) {
+          return fallback;
+        }
+
+        return Math.max(0, Math.min(22, Math.round(numericValue)));
+      }
+
+      var initialZoom = normalizeZoom(params.get('zoom'), defaultZoom);
+      var map = L.map('map', { zoomControl: false }).setView([initialCenter.lat, initialCenter.lng], initialZoom);
       window.map = map;
       var userMarker = null;
       var searchMarker = null;
@@ -149,6 +182,17 @@
         });
       }
 
+      function sendView() {
+        if (window.parent) {
+          var center = map.getCenter();
+          window.parent.postMessage({
+            type: 'view',
+            center: { lat: center.lat, lng: center.lng },
+            zoom: map.getZoom(),
+          }, '*');
+        }
+      }
+
       function centerOnLocation() {
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
@@ -196,17 +240,12 @@
 
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(function (pos) {
-          map.flyTo([pos.coords.latitude, pos.coords.longitude], defaultZoom);
           L.marker([pos.coords.latitude, pos.coords.longitude]).addTo(map).openPopup();
         });
       }
 
-      function sendZoom() {
-        if (window.parent) window.parent.postMessage({ type: 'zoom', value: map.getZoom() }, '*');
-      }
-
-      sendZoom();
-      map.on('zoomend', sendZoom);
+      sendView();
+      map.on('moveend', sendView);
 
       window.addEventListener('message', function (event) {
         if (event.origin !== window.location.origin) return;
@@ -215,12 +254,21 @@
         if (data.type === 'zoomIn') {
           if (map && typeof map.zoomIn === 'function') {
             map.zoomIn();
-            sendZoom();
           }
         } else if (data.type === 'zoomOut') {
           if (map && typeof map.zoomOut === 'function') {
             map.zoomOut();
-            sendZoom();
+          }
+        } else if (data.type === 'setZoom') {
+          if (map && typeof map.setZoom === 'function') {
+            map.setZoom(normalizeZoom(data.value, map.getZoom()));
+          }
+        } else if (data.type === 'setView') {
+          var center = normalizeCenter(data.center && data.center.lat, data.center && data.center.lng, map.getCenter());
+          var zoom = normalizeZoom(data.zoom, map.getZoom());
+
+          if (map && typeof map.setView === 'function') {
+            map.setView([center.lat, center.lng], zoom);
           }
         } else if (data.type === 'locate') {
           if (typeof centerOnLocation === 'function') centerOnLocation();

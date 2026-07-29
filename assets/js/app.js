@@ -30,6 +30,52 @@ const zoomInBtn = document.getElementById('zoomInBtn');
 const zoomOutBtn = document.getElementById('zoomOutBtn');
 const placeholderMapIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E";
 const newPoiFileValue = '__new__';
+let currentMapFile = window.defaultMap || '';
+let currentZoom = Number.isFinite(window.defaultZoom) ? window.defaultZoom : 5;
+let currentCenter = normalizeCenter(window.defaultCenter, { lat: 48.854659, lng: 2.347872 });
+
+function normalizeCoordinatePair(latValue, lngValue, fallback) {
+  const fallbackCenter = fallback || { lat: 48.854659, lng: 2.347872 };
+  const lat = Number(latValue);
+  const lng = Number(lngValue);
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return fallbackCenter;
+  }
+
+  return {
+    lat: Math.max(-90, Math.min(90, lat)),
+    lng: Math.max(-180, Math.min(180, lng)),
+  };
+}
+
+function normalizeCenter(value, fallback) {
+  if (Array.isArray(value) && value.length >= 2) {
+    return normalizeCoordinatePair(value[0], value[1], fallback);
+  }
+
+  if (value && typeof value === 'object') {
+    if ('lat' in value && 'lng' in value) {
+      return normalizeCoordinatePair(value.lat, value.lng, fallback);
+    }
+
+    if ('lat' in value && 'lon' in value) {
+      return normalizeCoordinatePair(value.lat, value.lon, fallback);
+    }
+  }
+
+  return fallback || { lat: 48.854659, lng: 2.347872 };
+}
+
+function normalizeZoom(value, fallback) {
+  const numericValue = Number(value);
+
+  if (!Number.isFinite(numericValue)) {
+    return fallback;
+  }
+
+  return Math.max(0, Math.min(22, Math.round(numericValue)));
+}
 
 function formatPoiCoordinate(value) {
   const numericValue = Number(value);
@@ -89,30 +135,46 @@ function closePoiAddOverlayPanel() {
 }
 
 function selectMap(file, overlay) {
-  loadMap(file);
+  currentMapFile = file;
+  loadMap(file, currentCenter, currentZoom);
   updateTitle(file);
-  persistSelectedMap(file);
+  persistSettings(file, currentCenter, currentZoom);
   overlay.classList.remove('show');
 }
 
 // Fonction pour charger une carte
-function loadMap(file) {
+function loadMap(file, center, zoom) {
+  const targetZoom = normalizeZoom(zoom, currentZoom);
+  const targetCenter = normalizeCenter(center, currentCenter);
+  const centerQuery = '&lat=' + encodeURIComponent(String(targetCenter.lat)) + '&lng=' + encodeURIComponent(String(targetCenter.lng));
+
   if(file.endsWith('.js')){
-    iframe.src = "iframe/map_base_online.html?tile=" + encodeURIComponent("../data/maps/maps_online/" + file);
+    iframe.src = "iframe/map_base_online.html?tile=" + encodeURIComponent("../data/maps/maps_online/" + file) + "&zoom=" + encodeURIComponent(String(targetZoom)) + centerQuery;
   } else if(file.endsWith('.txt')){
-    iframe.src = "iframe/map_base_local.html?tile=" + encodeURIComponent("../data/maps/maps_local/" + file);
+    iframe.src = "iframe/map_base_local.html?tile=" + encodeURIComponent("../data/maps/maps_local/" + file) + "&zoom=" + encodeURIComponent(String(targetZoom)) + centerQuery;
   }
 }
 
-function persistSelectedMap(file) {
+function persistSettings(file, center, zoom) {
+  const targetZoom = normalizeZoom(zoom, currentZoom);
+  const targetCenter = normalizeCenter(center, currentCenter);
+
   localStorage.setItem('selectedMap', file);
+  localStorage.setItem('selectedZoom', String(targetZoom));
+  localStorage.setItem('selectedCenterLat', String(targetCenter.lat));
+  localStorage.setItem('selectedCenterLng', String(targetCenter.lng));
 
   fetch('?action=settings', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ selectedMap: file })
+    body: JSON.stringify({
+      selectedMap: file,
+      zoom: targetZoom,
+      centerLat: targetCenter.lat,
+      centerLng: targetCenter.lng,
+    })
   }).catch(function () {
     // La persistance navigateur reste disponible si l'écriture serveur échoue.
   });
@@ -310,17 +372,51 @@ schOverlay.querySelectorAll('li').forEach(li => {
 });
 
 // Charger la carte initiale
-loadMap(window.defaultMap);
-updateTitle(window.defaultMap);
+loadMap(currentMapFile, currentCenter, currentZoom);
+updateTitle(currentMapFile);
 
-// Recevoir zoom depuis l'iframe
+function syncMapStateFromMessage(data) {
+  if (!data) return;
+
+  if (data.center) {
+    currentCenter = normalizeCenter(data.center, currentCenter);
+  }
+
+  if (data.value != null && (data.type === 'zoom' || data.type === 'view')) {
+    currentZoom = normalizeZoom(data.value, currentZoom);
+  }
+
+  if (currentMapFile) {
+    persistSettings(currentMapFile, currentCenter, currentZoom);
+  }
+}
+
+// Recevoir l'état de l'iframe
 window.addEventListener("message", (event) => {
-  if(event.data.type === "zoom") {
-    mapZoom.textContent = "Zoom : " + event.data.value;
-  } else if (event.data.type === 'poiAddRequested') {
+  const data = event.data || {};
+
+  if(data.type === "zoom") {
+    currentZoom = normalizeZoom(data.value, currentZoom);
+    mapZoom.textContent = "Zoom : " + currentZoom;
+    if (currentMapFile) {
+      persistSettings(currentMapFile, currentCenter, currentZoom);
+    }
+  } else if (data.type === 'center') {
+    currentCenter = normalizeCenter(data.value, currentCenter);
+    if (currentMapFile) {
+      persistSettings(currentMapFile, currentCenter, currentZoom);
+    }
+  } else if (data.type === 'view') {
+    currentCenter = normalizeCenter(data.center, currentCenter);
+    currentZoom = normalizeZoom(data.zoom, currentZoom);
+    mapZoom.textContent = "Zoom : " + currentZoom;
+    if (currentMapFile) {
+      persistSettings(currentMapFile, currentCenter, currentZoom);
+    }
+  } else if (data.type === 'poiAddRequested') {
     openPoiAddOverlayWithTarget({
-      lat: event.data.lat,
-      lng: event.data.lng,
+      lat: data.lat,
+      lng: data.lng,
     });
   }
 });
@@ -339,6 +435,8 @@ iframe.addEventListener('load', () => {
       b.disabled = false;
     }
   });
+
+  postToIframe({ type: 'setView', center: currentCenter, zoom: currentZoom });
 
 });
 
