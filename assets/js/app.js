@@ -142,6 +142,28 @@ function selectMap(file, overlay) {
   overlay.classList.remove('show');
 }
 
+function closeOverlay(panel, afterClose) {
+  if (!panel) return false;
+
+  const wasOpen = panel.classList.contains('show');
+  panel.classList.remove('show');
+
+  if (wasOpen && typeof afterClose === 'function') {
+    afterClose();
+  }
+
+  return wasOpen;
+}
+
+function closeVisibleOverlays() {
+  const closedMapOverlay = closeOverlay(mapOverlay);
+  const closedSearchOverlay = closeOverlay(schOverlay);
+  const closedPoiOverlay = closeOverlay(poiOverlay);
+  const closedPoiAddOverlay = closeOverlay(poiAddOverlay, closePoiAddOverlayPanel);
+
+  return closedMapOverlay || closedSearchOverlay || closedPoiOverlay || closedPoiAddOverlay;
+}
+
 // Fonction pour charger une carte
 function loadMap(file, center, zoom) {
   const targetZoom = normalizeZoom(zoom, currentZoom);
@@ -274,22 +296,35 @@ if (openPoiAddOverlay) {
 
 // Fermer l'overlay choix des cartes
 closeMapOverlay.addEventListener('click', () => {
-  mapOverlay.classList.remove('show');
+  closeOverlay(mapOverlay);
 });
 
 // Fermer l'overlay de recherche
 closeSchOverlay.addEventListener('click', () => {
-  schOverlay.classList.remove('show');
+  closeOverlay(schOverlay);
 });
 
 // Fermer l'overlay des points d'intérêt
 closePoiOverlay.addEventListener('click', () => {
-  poiOverlay.classList.remove('show');
+  closeOverlay(poiOverlay);
 });
 
 if (closePoiAddOverlay) {
   closePoiAddOverlay.addEventListener('click', closePoiAddOverlayPanel);
 }
+
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape') {
+    return;
+  }
+
+  if (!closeVisibleOverlays()) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+});
 
 if (poiAddFile) {
   poiAddFile.addEventListener('change', updatePoiAddFileMode);
