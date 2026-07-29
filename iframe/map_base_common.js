@@ -50,6 +50,23 @@
   var poiLongPressTimer = null;
   var poiLongPressStart = null;
   var locationZoom = isLocalMap ? 11 : 16;
+  function createMarkerIcon(color) {
+    return L.icon({
+      iconUrl: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <path fill="${color}" d="M50.002 0C30.763 0 15 15.718 15 34.902c0 7.432 2.374 14.34 6.392 20.019L45.73 96.994c3.409 4.453 5.675 3.607 8.51-.235l26.843-45.683c.542-.981.967-2.026 1.338-3.092A34.446 34.446 0 0 0 85 34.902C85 15.718 69.24 0 50.002 0zm0 16.354c10.359 0 18.597 8.218 18.597 18.548c0 10.33-8.238 18.544-18.597 18.544c-10.36 0-18.601-8.215-18.601-18.544c0-10.33 8.241-18.548 18.6-18.548z"/>
+        </svg>
+      `),
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      tooltipAnchor: [16, -28]
+    });
+  }
+
+  var userLocationIcon = createMarkerIcon('#d56b6b');
+  var poiIcon = createMarkerIcon('#0b336e');
+  var searchIcon = createMarkerIcon('#19792f');
 
   window.map = map;
 
@@ -82,7 +99,9 @@
 
       if (Number.isNaN(lat) || Number.isNaN(lng)) return;
 
-      var marker = L.marker([lat, lng]);
+      var marker = L.marker([lat, lng], {
+        icon: poiIcon
+      });
       var popupParts = [];
 
       if (point.label) {
@@ -188,7 +207,7 @@
           var latlng = [pos.coords.latitude, pos.coords.longitude];
           map.flyTo(latlng, locationZoom);
           if (!userMarker) {
-            userMarker = L.marker(latlng).addTo(map);
+            userMarker = L.marker(latlng, { icon: userLocationIcon }).addTo(map);
           } else {
             userMarker.setLatLng(latlng);
           }
@@ -232,7 +251,7 @@
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
       function (pos) {
-        L.marker([pos.coords.latitude, pos.coords.longitude]).addTo(map).openPopup();
+        L.marker([pos.coords.latitude, pos.coords.longitude], { icon: userLocationIcon }).addTo(map).openPopup();
       },
       isLocalMap ? function () { } : function (err) { console.warn('Erreur géolocalisation:', err.message); },
       { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
@@ -281,7 +300,9 @@
       if (searchMarker) {
         searchMarker.setLatLng(latlng);
       } else {
-        searchMarker = L.marker(latlng).addTo(map);
+        searchMarker = L.marker(latlng, {
+          icon: searchIcon
+        }).addTo(map);
       }
 
       if (data.label) {
