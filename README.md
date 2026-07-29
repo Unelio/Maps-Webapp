@@ -51,9 +51,15 @@ L.tileLayer('https://tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png', {
 }).addTo(map);
 ```
 
-## Ajouter des points d'intérêts (POI)
+## Ajouter des points d'intérêt (POI)
 
-Pour ajouter des points d'intérêt, il suffit de déposer vos fichiers GPX dans `data/poi/`.
+### Via l'interface
+
+Il suffit de faire un appui long sur le lieu que vous voulez enregistrer.
+
+### Via des fichiers GPX
+
+Vous pouvez déposer vos fichiers GPX dans `data/poi/`.
 
 - Chaque fichier `.gpx` peut contenir un ensemble de points à afficher sur la carte
 - Le fichier GPX donne son nom au dossier qui regroupe les points qu'il contient
