@@ -4,5 +4,7 @@
 .env
 status-error.php
 
+TODO.txt
 **/*.mbtiles
 **/tiles_google_*.js
+**/assets/images/manifest/README.txt
