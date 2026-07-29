@@ -1,0 +1,2 @@
+mbtiles=maps/Maptiler_Satelitte_2017_Raster.mbtiles
+logo=logos/tiles_maptiler_satelitte_2017.png

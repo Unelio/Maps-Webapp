@@ -1,0 +1,2 @@
+mbtiles=maps/Oam_Classic_2025_Raster.mbtiles
+logo=logos/oam.png

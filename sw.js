@@ -4,7 +4,7 @@
 importScripts('workbox-sw.js');
 
 // Nom du cache utilisé pour stocker la page de repli hors ligne
-const CACHE = "votre_nom_de_domaine.com";
+const CACHE = `${'localhost'}`;
 
 // Page affichée quand la navigation réseau échoue
 const offlineFallbackPage = "offline.php";

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Maps</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  connect-src 'self';
+  script-src 'self' 'unsafe-inline';
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' data:;
+  frame-src 'self';
+">
+
+<link rel="manifest" href="manifest.json">
+
+<link rel="icon" sizes="512x512" href="favicon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="Maps">
+
+<meta name="apple-mobile-web-app-title" content="Maps">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#fff">
+<link rel="apple-touch-icon" sizes="512x512" href="favicon.png">
+
+<meta name="msapplication-tooltip" content="Maps">
+<meta name="msapplication-TileColor" content="#fff">
+<meta name="msapplication-TileImage" content="favicon.png">
+
+<link rel="stylesheet" type="text/css" href="assets/fonts/roboto/roboto.css">
+<link rel="stylesheet" type="text/css" href="assets/fonts/fontello/fontello.css">
+<link rel="stylesheet" href="assets/css/styles.css?t={{ASSET_VERSION}}">
+</head>
+
+<body class="login-page">
+  <main>
+    <form action="/index.php" method="post">
+      <div>
+        <i class="ico icon-user"></i>
+        <input name="login" type="text" autofocus placeholder="Identifiant" size="10" maxlength="255"/>
+      </div>
+      <div>
+        <i class="ico icon-lock"></i>
+        <input name="password" type="password" placeholder="Mot de passe" size="10" maxlength="255"/>
+      </div>
+      <input type="submit" value="Valider" />
+      {{ERROR_HTML}}
+      <p id="result"></p>
+    </form>
+    <script src="assets/js/login.js"></script>
+  </main>
+</body>
+</html>

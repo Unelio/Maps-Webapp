@@ -19,42 +19,26 @@ LOGIN="Utilisateur"
 PASSWORD="Mot_de_passe"
 ```
 
-Vous pouvez aussi définir une carte affichée par défaut. Les cartes sont chargées depuis `maps/maps_local` ou `maps/maps_online` selon leur type.
-
-```env
-DEFAULT_MAP=tiles_online.js
-```
-
-Il est également possible de masquer certaines cartes dans l'interface. Séparez les fichiers avec une virgule.
-
-```env
-HIDE_MAPS=tiles_online.js,tiles_local.php
-```
-
-## Service worker
-
-Dans `sw.js`, remplacez la valeur de `CACHE` par votre nom de domaine :
-
-```js
-const CACHE = "votre_nom_de_domaine.com";
-```
+Le fichier .env_example contient les autres options de configuration que vous pouvez personnaliser.
 
 ## Ajouter des cartes locales
 
-Les cartes hors ligne sont prises en charge au format raster `.mbtiles`.
+Les cartes hors ligne fonctionnent seulement avec le format raster `.mbtiles`.
 
-- Placez le fichier de carte dans `maps/maps_local/maps`
-- Créez un fichier de configuration `tiles*.php` dans `maps/maps_local`
+- Placez le fichier de carte `.mbtiles` dans `data/maps/maps_local/maps`
+- Vous pouvez aussi personnaliser le logo avec `logo=logos/mon_logo.png` dans le fichier `tiles_*.txt`
 
 Les cartes vectorielles ne sont pas prises en charge.
 
 ## Ajouter des cartes en ligne
 
-Pour ajouter une carte en ligne, créez un fichier `tiles*.js` dans `maps/maps_online`.
+- Pour ajouter une carte en ligne, créez un fichier `tiles*.js` dans `data/maps/maps_online`.
+- Vous pouvez aussi personnaliser le logo avec un commentaire en tête de fichier: `// logo=logos/mon_logo.png`
 
 Exemple :
 
 ```js
+// logo=logos/tiles_openrailwaymap_train_online.png
 L.tileLayer('https://tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png', {
     maxZoom: 19
 }).addTo(map);
@@ -62,9 +46,7 @@ L.tileLayer('https://tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png', {
 
 ## Ajouter des points d'intérêts (POI)
 
-Pour ajouter des points d'intérêt, il suffit de déposer vos fichiers GPX dans `data/`.
+Pour ajouter des points d'intérêt, il suffit de déposer vos fichiers GPX dans `data/poi/`.
 
 - Chaque fichier `.gpx` peut contenir un ensemble de points à afficher sur la carte
 - Le fichier GPX donne son nom au dossier qui regroupe les points qu'il contient
-
-
