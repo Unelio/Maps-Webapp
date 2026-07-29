@@ -8,6 +8,18 @@ const poiOverlay = document.getElementById('poiOverlay');
 const closeMapOverlay = document.getElementById('closeMapOverlay');
 const closeSchOverlay = document.getElementById('closeSchOverlay');
 const closePoiOverlay = document.getElementById('closePoiOverlay');
+const poiAddOverlay = document.getElementById('poiAddOverlay');
+const closePoiAddOverlay = document.getElementById('closePoiAddOverlay');
+const poiAddForm = document.getElementById('poiAddForm');
+const poiAddLabel = document.getElementById('poiAddLabel');
+const poiAddFile = document.getElementById('poiAddFile');
+const poiAddNewFileWrap = document.getElementById('poiAddNewFileWrap');
+const poiAddNewFile = document.getElementById('poiAddNewFile');
+const poiAddLat = document.getElementById('poiAddLat');
+const poiAddLng = document.getElementById('poiAddLng');
+const poiAddCoords = document.getElementById('poiAddCoords');
+const poiAddStatus = document.getElementById('poiAddStatus');
+const openPoiAddOverlay = document.getElementById('openPoiAddOverlay');
 const mapTitle = document.getElementById('mapTitle');
 const mapIcon = document.getElementById('mapIcon');
 const mapZoom = document.getElementById('mapZoom');
@@ -17,6 +29,64 @@ const locateBtn = document.getElementById('locateBtn');
 const zoomInBtn = document.getElementById('zoomInBtn');
 const zoomOutBtn = document.getElementById('zoomOutBtn');
 const placeholderMapIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E";
+const newPoiFileValue = '__new__';
+
+function formatPoiCoordinate(value) {
+  const numericValue = Number(value);
+
+  if (Number.isNaN(numericValue)) {
+    return '';
+  }
+
+  return numericValue.toFixed(6);
+}
+
+function setPoiAddStatus(message, isError) {
+  if (!poiAddStatus) return;
+
+  poiAddStatus.textContent = message || '';
+  poiAddStatus.classList.toggle('is-error', !!isError);
+}
+
+function setPoiAddTarget(coords) {
+  if (!poiAddLat || !poiAddLng || !poiAddCoords) return;
+
+  const lat = coords && coords.lat;
+  const lng = coords && coords.lng;
+
+  poiAddLat.value = lat != null ? String(lat) : '';
+  poiAddLng.value = lng != null ? String(lng) : '';
+  poiAddCoords.textContent = lat != null && lng != null
+    ? 'Position: ' + formatPoiCoordinate(lat) + ', ' + formatPoiCoordinate(lng)
+    : 'Appui long sur la carte pour choisir la position.';
+}
+
+function updatePoiAddFileMode() {
+  if (!poiAddFile || !poiAddNewFileWrap || !poiAddNewFile) return;
+
+  const createNewFile = poiAddFile.value === newPoiFileValue;
+  poiAddNewFileWrap.hidden = !createNewFile;
+  poiAddNewFile.required = createNewFile;
+}
+
+function openPoiAddOverlayWithTarget(coords) {
+  if (!poiAddOverlay) return;
+
+  setPoiAddTarget(coords || null);
+  setPoiAddStatus(coords ? '' : 'Déclenche un appui long sur la carte pour définir la position.', false);
+  poiAddOverlay.classList.add('show');
+
+  if (poiAddLabel) {
+    poiAddLabel.focus();
+  }
+}
+
+function closePoiAddOverlayPanel() {
+  if (!poiAddOverlay) return;
+
+  poiAddOverlay.classList.remove('show');
+  setPoiAddStatus('', false);
+}
 
 function selectMap(file, overlay) {
   loadMap(file);
@@ -134,6 +204,12 @@ mapPoi.addEventListener('click', () => {
   poiOverlay.classList.add('show');
 });
 
+if (openPoiAddOverlay) {
+  openPoiAddOverlay.addEventListener('click', () => {
+    openPoiAddOverlayWithTarget(null);
+  });
+}
+
 // Fermer l'overlay choix des cartes
 closeMapOverlay.addEventListener('click', () => {
   mapOverlay.classList.remove('show');
@@ -148,6 +224,77 @@ closeSchOverlay.addEventListener('click', () => {
 closePoiOverlay.addEventListener('click', () => {
   poiOverlay.classList.remove('show');
 });
+
+if (closePoiAddOverlay) {
+  closePoiAddOverlay.addEventListener('click', closePoiAddOverlayPanel);
+}
+
+if (poiAddFile) {
+  poiAddFile.addEventListener('change', updatePoiAddFileMode);
+}
+
+if (poiAddForm) {
+  poiAddForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+
+    const lat = poiAddLat ? parseFloat(poiAddLat.value) : NaN;
+    const lng = poiAddLng ? parseFloat(poiAddLng.value) : NaN;
+    const label = poiAddLabel ? poiAddLabel.value.trim() : '';
+    const file = poiAddFile ? poiAddFile.value : '';
+    const newFile = poiAddNewFile ? poiAddNewFile.value.trim() : '';
+
+    if (Number.isNaN(lat) || Number.isNaN(lng)) {
+      setPoiAddStatus('Ajoute d’abord un point par appui long sur la carte.', true);
+      return;
+    }
+
+    if (!label) {
+      setPoiAddStatus('Le nom du point est obligatoire.', true);
+      if (poiAddLabel) {
+        poiAddLabel.focus();
+      }
+      return;
+    }
+
+    if (file === newPoiFileValue && !newFile) {
+      setPoiAddStatus('Le nom du nouveau dossier est obligatoire.', true);
+      if (poiAddNewFile) {
+        poiAddNewFile.focus();
+      }
+      return;
+    }
+
+    setPoiAddStatus('Enregistrement en cours...', false);
+
+    fetch('?action=add', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        file: file,
+        newFile: file === newPoiFileValue ? newFile : '',
+        label: label,
+        lat: lat,
+        lng: lng,
+      }),
+    })
+      .then((response) => response.json().then((payload) => ({ response, payload })))
+      .then(({ response, payload }) => {
+        if (!response.ok || !payload || payload.ok !== true) {
+          throw new Error((payload && payload.error) || 'save_failed');
+        }
+
+        setPoiAddStatus('Point ajouté. Rechargement...', false);
+        closePoiAddOverlayPanel();
+        window.location.reload();
+      })
+      .catch(() => {
+        setPoiAddStatus('Impossible d’enregistrer le point.', true);
+      });
+  });
+}
 
 // Sélection d'une carte
 mapOverlay.querySelectorAll('li').forEach(li => {
@@ -170,6 +317,11 @@ updateTitle(window.defaultMap);
 window.addEventListener("message", (event) => {
   if(event.data.type === "zoom") {
     mapZoom.textContent = "Zoom : " + event.data.value;
+  } else if (event.data.type === 'poiAddRequested') {
+    openPoiAddOverlayWithTarget({
+      lat: event.data.lat,
+      lng: event.data.lng,
+    });
   }
 });
 
@@ -189,6 +341,8 @@ iframe.addEventListener('load', () => {
   });
 
 });
+
+updatePoiAddFileMode();
 
 function postToIframe(msg){
   try {

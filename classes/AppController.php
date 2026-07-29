@@ -42,7 +42,7 @@ class AppController
       return true;
     }
 
-    if (!in_array($action, ['load', 'save', 'search', 'settings'], true)) {
+    if (!in_array($action, ['load', 'save', 'add', 'search', 'settings'], true)) {
       return false;
     }
 
@@ -60,6 +60,14 @@ class AppController
       if ($action === 'settings') {
         $this->handleSettingsAction($_SERVER['REQUEST_METHOD'] ?? 'GET');
         return true;
+      }
+
+      if ($action === 'add') {
+        $poiWriter = new PoiWriterManager($this->baseDir);
+
+        if ($poiWriter->dispatchAction($action, $_SERVER['REQUEST_METHOD'] ?? 'GET')) {
+          return true;
+        }
       }
 
       $poiManager = new PoiManager($this->baseDir);
@@ -137,6 +145,7 @@ class AppController
       'MAPS_COUNT' => (string)count($maps),
       'MAP_OPTIONS' => $this->buildMapOptionsHtml($maps),
       'POI_PANEL' => $this->buildPoiPanelHtml($poiFiles),
+      'POI_ADD_OVERLAY' => $this->buildPoiAddOverlayHtml($poiFiles),
     ]);
   }
 
@@ -144,8 +153,10 @@ class AppController
   {
     $poiPanelHtml = '<div class="poi-panel">'
       . '<div class="poi-header">'
+      . '<div>'
       . '<h2>Points d\'intérêt</h2>'
       . '<div class="poi-summary">' . count($poiFiles) . ' dossier(s)</div>'
+      . '</div>'
       . '</div>';
 
     if (empty($poiFiles)) {
@@ -182,6 +193,64 @@ class AppController
     $poiPanelHtml .= '<script id="poiCatalogData" type="application/json">' . json_encode($poiFiles, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) . '</script>';
 
     return $poiPanelHtml;
+  }
+
+  private function buildPoiAddOverlayHtml(array $poiFiles): string
+  {
+    $fileOptionsHtml = $this->buildPoiFileOptionsHtml($poiFiles);
+
+    return '<div id="poiAddOverlay">'
+      . '<span id="closePoiAddOverlay">&times;</span>'
+      . '<div class="poi-add-panel">'
+      . '<div class="poi-add-header">'
+      . '<div>'
+      . '<h2>Ajouter un point</h2>'
+      . '<div class="poi-add-summary" id="poiAddCoords">Appui long sur la carte pour choisir la position.</div>'
+      . '</div>'
+      . '</div>'
+      . '<form id="poiAddForm">'
+      . '<label class="poi-add-field">'
+      . '<span>Nom du point</span>'
+      . '<input id="poiAddLabel" type="text" maxlength="120" autocomplete="off" placeholder="Nom du point" required>'
+      . '</label>'
+      . '<label class="poi-add-field">'
+      . '<span>Dossier</span>'
+      . '<select id="poiAddFile" required>'
+      . $fileOptionsHtml
+      . '</select>'
+      . '</label>'
+      . '<label class="poi-add-field" id="poiAddNewFileWrap" hidden>'
+      . '<span>Nouveau dossier</span>'
+      . '<input id="poiAddNewFile" type="text" maxlength="120" autocomplete="off" placeholder="Nom du nouveau dossier">'
+      . '</label>'
+      . '<input id="poiAddLat" type="hidden">'
+      . '<input id="poiAddLng" type="hidden">'
+      . '<div class="poi-add-actions">'
+      . '<button type="submit" class="poi-add-submit">Ajouter</button>'
+      . '</div>'
+      . '<div id="poiAddStatus" class="poi-add-status" aria-live="polite"></div>'
+      . '</form>'
+      . '</div>'
+      . '</div>';
+  }
+
+  private function buildPoiFileOptionsHtml(array $poiFiles): string
+  {
+    $options = '<option value="__new__">Créer un dossier</option>';
+
+    foreach ($poiFiles as $fileData) {
+      $file = (string)($fileData['file'] ?? '');
+      if ($file === '') {
+        continue;
+      }
+
+      $label = trim((string)($fileData['label'] ?? ''));
+      $display = $label !== '' ? $label : $file;
+
+      $options .= '<option value="' . htmlspecialchars($file, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($display, ENT_QUOTES, 'UTF-8') . '</option>';
+    }
+
+    return $options;
   }
 
   private function buildMapOptionsHtml(array $maps): string

@@ -26,6 +26,8 @@
       var searchMarker = null;
       var poiLayers = {};
       var poiMarkers = {};
+      var poiLongPressTimer = null;
+      var poiLongPressStart = null;
 
       function escapeHtml(text) {
         return String(text || '')
@@ -78,6 +80,69 @@
           if (point.visible !== false) {
             marker.addTo(poiLayers[fileKey]);
           }
+        });
+      }
+
+      function clearPoiLongPressTimer() {
+        if (poiLongPressTimer) {
+          clearTimeout(poiLongPressTimer);
+          poiLongPressTimer = null;
+        }
+
+        poiLongPressStart = null;
+      }
+
+      function requestPoiAdd(latlng) {
+        if (!latlng || Number.isNaN(latlng.lat) || Number.isNaN(latlng.lng)) return;
+
+        if (window.parent) {
+          window.parent.postMessage({
+            type: 'poiAddRequested',
+            lat: latlng.lat,
+            lng: latlng.lng,
+          }, '*');
+        }
+      }
+
+      function startPoiLongPress(event) {
+        if (!event) return;
+
+        if (event.pointerType === 'mouse' && event.button !== 0) {
+          return;
+        }
+
+        poiLongPressStart = {
+          x: event.clientX,
+          y: event.clientY,
+          latlng: map.mouseEventToLatLng(event),
+        };
+
+        clearPoiLongPressTimer();
+        poiLongPressTimer = setTimeout(function () {
+          requestPoiAdd(poiLongPressStart && poiLongPressStart.latlng);
+          clearPoiLongPressTimer();
+        }, 650);
+      }
+
+      function movePoiLongPress(event) {
+        if (!poiLongPressTimer || !poiLongPressStart) return;
+
+        if (Math.abs(event.clientX - poiLongPressStart.x) > 10 || Math.abs(event.clientY - poiLongPressStart.y) > 10) {
+          clearPoiLongPressTimer();
+        }
+      }
+
+      function bindPoiLongPressHandlers() {
+        var container = map.getContainer();
+
+        container.addEventListener('pointerdown', startPoiLongPress, { passive: true });
+        container.addEventListener('pointermove', movePoiLongPress, { passive: true });
+        container.addEventListener('pointerup', clearPoiLongPressTimer);
+        container.addEventListener('pointercancel', clearPoiLongPressTimer);
+        container.addEventListener('pointerleave', clearPoiLongPressTimer);
+        container.addEventListener('contextmenu', function (event) {
+          event.preventDefault();
+          requestPoiAdd(map.mouseEventToLatLng(event));
         });
       }
 
@@ -167,6 +232,7 @@
 
       L.control.locate = function (opts) { return new L.Control.Locate(opts); };
       L.control.locate({ position: 'bottomleft' }).addTo(map);
+      bindPoiLongPressHandlers();
 
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
