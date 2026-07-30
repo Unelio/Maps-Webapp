@@ -25,7 +25,7 @@ class PoiManager
     return false;
   }
 
-  public function getCatalog(): array
+  public function getCatalog(bool $showEmptyFolders = false): array
   {
     $dataDirectory = $this->dataDirectory();
     $gpxFiles = glob($dataDirectory . '/*.gpx') ?: [];
@@ -39,7 +39,7 @@ class PoiManager
       }
 
       $totalCount = $this->countGpxPoints($gpxPath);
-      if ($totalCount <= 0) {
+      if ($totalCount <= 0 && !$showEmptyFolders) {
         continue;
       }
 

@@ -31,6 +31,20 @@ class AppController
     return $envParser->parse($this->baseDir . '/.env');
   }
 
+  private function readBooleanEnv(array $env, string $name, bool $default = false): bool
+  {
+    if (!array_key_exists($name, $env)) {
+      return $default;
+    }
+
+    $value = filter_var($env[$name], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    if ($value === null) {
+      return $default;
+    }
+
+    return $value;
+  }
+
   private function handleAction(array $env): bool
   {
     $action = $_GET['action'] ?? null;
@@ -144,9 +158,10 @@ class AppController
     $defaultMap = $this->resolveDefaultMap($mapManager, $maps, $settings);
     $defaultZoom = $this->resolveDefaultZoom($settings);
     $defaultCenter = $this->resolveDefaultCenter($settings);
+    $showEmptyFolders = $this->readBooleanEnv($env, 'SHOW_EMPTY_GPX', false);
 
     $poiManager = new PoiManager($this->baseDir);
-    $poiFiles = $poiManager->getCatalog();
+    $poiFiles = $poiManager->getCatalog($showEmptyFolders);
 
     $templateRenderer = new TemplateRenderer();
 
