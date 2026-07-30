@@ -42,7 +42,7 @@ class AppController
       return true;
     }
 
-    if (!in_array($action, ['load', 'save', 'add', 'search', 'settings'], true)) {
+    if (!in_array($action, ['load', 'save', 'add', 'modify', 'delete', 'search', 'settings'], true)) {
       return false;
     }
 
@@ -62,10 +62,18 @@ class AppController
         return true;
       }
 
-      if ($action === 'add') {
+      if ($action === 'add' || $action === 'modify') {
         $poiWriter = new PoiWriterManager($this->baseDir);
 
         if ($poiWriter->dispatchAction($action, $_SERVER['REQUEST_METHOD'] ?? 'GET')) {
+          return true;
+        }
+      }
+
+      if ($action === 'delete') {
+        $poiDeleteManager = new PoiDeleteManager($this->baseDir);
+
+        if ($poiDeleteManager->dispatchAction($action, $_SERVER['REQUEST_METHOD'] ?? 'GET')) {
           return true;
         }
       }
@@ -151,6 +159,7 @@ class AppController
       'MAP_OPTIONS' => $this->buildMapOptionsHtml($maps),
       'POI_PANEL' => $this->buildPoiPanelHtml($poiFiles),
       'POI_ADD_OVERLAY' => $this->buildPoiAddOverlayHtml($poiFiles),
+      'POI_DELETE_OVERLAY' => $this->buildPoiDeleteOverlayHtml(),
     ]);
   }
 
@@ -233,6 +242,28 @@ class AppController
       . '</div>'
       . '<div id="poiAddStatus" class="poi-add-status" aria-live="polite"></div>'
       . '</form>'
+      . '</div>'
+      . '</div>';
+  }
+
+  private function buildPoiDeleteOverlayHtml(): string
+  {
+    return '<div id="poiDeleteOverlay" role="dialog" aria-modal="true" aria-labelledby="poiDeleteTitle">'
+      . '<span id="closePoiDeleteOverlay">&times;</span>'
+      . '<div class="poi-delete-panel">'
+      . '<div class="poi-delete-header">'
+      . '<div>'
+      . '<h2 id="poiDeleteTitle">Supprimer un point</h2>'
+      . '</div>'
+      . '</div>'
+      . '<div class="poi-delete-body">'
+      . '<p class="poi-delete-question" id="poiDeleteQuestion">Êtes-vous sûr de vouloir supprimer ce point ?</p>'
+      . '<div id="poiDeleteStatus" class="poi-delete-status" aria-live="polite"></div>'
+      . '</div>'
+      . '<div class="poi-delete-actions">'
+      . '<button type="button" class="poi-delete-cancel" id="poiDeleteCancel">Annuler</button>'
+      . '<button type="button" class="poi-delete-confirm" id="poiDeleteConfirm">Supprimer</button>'
+      . '</div>'
       . '</div>'
       . '</div>';
   }

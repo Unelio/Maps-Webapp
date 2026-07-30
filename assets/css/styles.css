@@ -110,6 +110,7 @@ header {
 /* Overlay plein écran */
 #poiOverlay,
 #poiAddOverlay,
+#poiDeleteOverlay,
 #mapOverlay,
 #schOverlay {
   opacity: 0;                    /* invisible par défaut */
@@ -137,8 +138,13 @@ header {
   overflow-y: auto;
 }
 
+#poiDeleteOverlay {
+  overflow-y: auto;
+}
+
 #poiOverlay.show,
 #poiAddOverlay.show,
+#poiDeleteOverlay.show,
 #mapOverlay.show,
 #schOverlay.show {
   opacity: 1;
@@ -371,6 +377,11 @@ header {
   font-size: 14px;
 }
 
+.poi-empty {
+  margin: 10px 0;
+  text-align: center;
+}
+
 .poi-summary {
   margin-left: auto;
   white-space: nowrap;
@@ -455,9 +466,10 @@ header {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  padding: 10px 14px 10px 46px;
+  padding: 10px 10px 10px 46px;
   border-top: 1px solid rgba(0,0,0,0.06);
   background: rgba(255,255,255,0.78);
+  position: relative;
 }
 
 .poi-point-eye {
@@ -526,7 +538,74 @@ header {
 
 .poi-point-body {
   min-width: 0;
-  flex: 1;
+  flex: 1 1 auto;
+}
+
+.poi-point-actions {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  margin-left: auto;
+  margin-right: 2px;
+  flex: 0 0 auto;
+}
+
+.poi-point-menu-toggle {
+  width: 30px;
+  height: 30px;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+}
+
+.poi-point-menu {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 4000;
+  min-width: 146px;
+  padding: 6px;
+  background: #f0f1f3;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14);
+}
+
+.poi-point-menu-floating {
+  pointer-events: auto;
+}
+
+.poi-point-menu-item {
+  display: block;
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 14px;
+  color: #222;
+  cursor: pointer;
+}
+
+.poi-point-menu-item:hover,
+.poi-point-menu-item:focus-visible {
+  background: rgba(31, 119, 177, 0.08);
+}
+
+.poi-point-menu-item.is-danger {
+  color: #b42318;
+}
+
+.poi-point-menu-item.is-danger:hover,
+.poi-point-menu-item.is-danger:focus-visible {
+  background: rgba(180, 35, 24, 0.08);
+}
+
+.poi-point-menu[hidden] {
+  display: none;
 }
 
 .poi-point-label {
@@ -649,8 +728,14 @@ header {
 
 .poi-add-field input:focus,
 .poi-add-field select:focus {
-  border-color: rgba(31, 119, 177, 0.35);
-  box-shadow: 0 0 0 3px rgba(31, 119, 177, 0.08);
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: none;
+}
+
+.poi-add-field input:hover,
+.poi-add-field select:hover {
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: none;
 }
 
 .poi-add-actions {
@@ -741,8 +826,109 @@ header {
   color: #333;
 }
 
+.poi-delete-panel {
+  width: 92%;
+  max-width: 520px;
+  margin: 72px auto 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+  padding: 10px 20px 18px;
+  background: #fdfefe;
+  border-radius: 15px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 1px 2px rgba(255, 255, 255, 0.9) inset,
+    0 10px 24px rgba(0, 0, 0, 0.08),
+    0 2px 6px rgba(31, 119, 177, 0.06);
+}
+
+.poi-delete-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 12px;
+}
+
+.poi-delete-header h2 {
+  margin: 0;
+  font-size: 22px;
+  color: #1f1f1f;
+}
+
+.poi-delete-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.poi-delete-question {
+  margin: 10px 0;
+  font-size: 18px;
+  line-height: 1.45;
+  color: #222;
+}
+
+.poi-delete-status {
+  font-size: 14px;
+  color: #333;
+}
+
+.poi-delete-status:empty {
+  display: none;
+}
+
+.poi-delete-status.is-error {
+  color: #b00020;
+}
+
+.poi-delete-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.poi-delete-cancel,
+.poi-delete-confirm {
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.poi-delete-cancel {
+  background: rgba(0, 0, 0, 0.08);
+  color: #222;
+}
+
+.poi-delete-cancel:hover {
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.poi-delete-confirm {
+  background: #b42318;
+  color: #fff;
+}
+
+.poi-delete-confirm:hover {
+  background: #8e1c12;
+}
+
+.poi-delete-confirm:disabled,
+.poi-delete-cancel:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
 /* Fermer overlay */
 #poiAddOverlay #closePoiAddOverlay,
+#poiDeleteOverlay #closePoiDeleteOverlay,
 #poiOverlay #closePoiOverlay,
 #mapOverlay #closeMapOverlay,
 #schOverlay #closeSchOverlay {
@@ -978,6 +1164,14 @@ body > main form input[type="submit"]:hover {
 @media (max-width: 400px) {
   body > main {
     transform: translateY(-10%); /* Remonte le bloc de 10% */
+  }
+
+  .poi-point {
+    padding-right: 6px;
+  }
+
+  .poi-point-actions {
+    margin-right: 0;
   }
   
   body > main form {

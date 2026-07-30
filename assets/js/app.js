@@ -10,6 +10,12 @@ const closeSchOverlay = document.getElementById('closeSchOverlay');
 const closePoiOverlay = document.getElementById('closePoiOverlay');
 const poiAddOverlay = document.getElementById('poiAddOverlay');
 const closePoiAddOverlay = document.getElementById('closePoiAddOverlay');
+const poiDeleteOverlay = document.getElementById('poiDeleteOverlay');
+const closePoiDeleteOverlay = document.getElementById('closePoiDeleteOverlay');
+const poiDeleteCancel = document.getElementById('poiDeleteCancel');
+const poiDeleteConfirm = document.getElementById('poiDeleteConfirm');
+const poiDeleteQuestion = document.getElementById('poiDeleteQuestion');
+const poiDeleteStatus = document.getElementById('poiDeleteStatus');
 const poiAddForm = document.getElementById('poiAddForm');
 const poiAddLabel = document.getElementById('poiAddLabel');
 const poiAddFile = document.getElementById('poiAddFile');
@@ -33,6 +39,10 @@ const newPoiFileValue = '__new__';
 let currentMapFile = window.defaultMap || '';
 let currentZoom = Number.isFinite(window.defaultZoom) ? window.defaultZoom : 5;
 let currentCenter = normalizeCenter(window.defaultCenter, { lat: 48.854659, lng: 2.347872 });
+let poiAddMode = 'add';
+let poiModifyContext = null;
+let poiDeleteAction = null;
+let poiDeleteBusy = false;
 
 function normalizeCoordinatePair(latValue, lngValue, fallback) {
   const fallbackCenter = fallback || { lat: 48.854659, lng: 2.347872 };
@@ -94,6 +104,71 @@ function setPoiAddStatus(message, isError) {
   poiAddStatus.classList.toggle('is-error', !!isError);
 }
 
+function setPoiAddOverlayMode(mode, context) {
+  poiAddMode = mode === 'modify' ? 'modify' : 'add';
+  poiModifyContext = poiAddMode === 'modify' && context ? context : null;
+
+  const titleNode = poiAddOverlay ? poiAddOverlay.querySelector('h2') : null;
+  const submitButton = poiAddForm ? poiAddForm.querySelector('.poi-add-submit') : null;
+  const fileField = poiAddFile ? poiAddFile.closest('.poi-add-field') : null;
+  const newFileField = poiAddNewFileWrap ? poiAddNewFileWrap : null;
+  const targetLabel = poiAddCoords;
+
+  if (poiAddMode === 'modify') {
+    if (titleNode) {
+      titleNode.textContent = 'Modifier un point';
+    }
+
+    if (submitButton) {
+      submitButton.textContent = 'Modifier';
+    }
+
+    if (fileField) {
+      fileField.hidden = true;
+    }
+
+    if (newFileField) {
+      newFileField.hidden = true;
+    }
+
+    if (targetLabel) {
+      targetLabel.textContent = poiModifyContext && poiModifyContext.label
+        ? 'Point à modifier: ' + poiModifyContext.label
+        : 'Modifier le nom du point.';
+    }
+
+    if (poiAddFile && poiModifyContext && poiModifyContext.file) {
+      poiAddFile.value = poiModifyContext.file;
+    }
+
+    return;
+  }
+
+  if (titleNode) {
+    titleNode.textContent = 'Ajouter un point';
+  }
+
+  if (submitButton) {
+    submitButton.textContent = 'Ajouter';
+  }
+
+  if (fileField) {
+    fileField.hidden = false;
+  }
+
+  if (newFileField) {
+    newFileField.hidden = false;
+  }
+
+  if (targetLabel) {
+    targetLabel.textContent = 'Appui long sur la carte pour choisir la position.';
+  }
+
+  if (poiAddFile) {
+    updatePoiAddFileMode();
+  }
+}
+
 function setPoiAddTarget(coords) {
   if (!poiAddLat || !poiAddLng || !poiAddCoords) return;
 
@@ -108,6 +183,8 @@ function setPoiAddTarget(coords) {
 }
 
 function updatePoiAddFileMode() {
+  if (poiAddMode !== 'add') return;
+
   if (!poiAddFile || !poiAddNewFileWrap || !poiAddNewFile) return;
 
   const createNewFile = poiAddFile.value === newPoiFileValue;
@@ -118,6 +195,7 @@ function updatePoiAddFileMode() {
 function openPoiAddOverlayWithTarget(coords) {
   if (!poiAddOverlay) return;
 
+  setPoiAddOverlayMode('add', null);
   setPoiAddTarget(coords || null);
   setPoiAddStatus(coords ? '' : 'Déclenche un appui long sur la carte pour définir la position.', false);
   poiAddOverlay.classList.add('show');
@@ -127,11 +205,88 @@ function openPoiAddOverlayWithTarget(coords) {
   }
 }
 
+function openPoiModifyOverlay(context) {
+  if (!poiAddOverlay) return;
+
+  const safeContext = context && typeof context === 'object' ? context : {};
+  setPoiAddOverlayMode('modify', {
+    file: String(safeContext.file || ''),
+    pointId: String(safeContext.pointId || ''),
+    label: String(safeContext.label || ''),
+  });
+  setPoiAddTarget(null);
+  setPoiAddStatus('', false);
+  poiAddOverlay.classList.add('show');
+
+  if (poiAddLabel) {
+    poiAddLabel.value = String(safeContext.label || '');
+    poiAddLabel.focus();
+    poiAddLabel.select();
+  }
+}
+
 function closePoiAddOverlayPanel() {
   if (!poiAddOverlay) return;
 
   poiAddOverlay.classList.remove('show');
   setPoiAddStatus('', false);
+  poiModifyContext = null;
+  setPoiAddOverlayMode('add', null);
+}
+
+function setPoiDeleteStatus(message, isError) {
+  if (!poiDeleteStatus) return;
+
+  poiDeleteStatus.textContent = message || '';
+  poiDeleteStatus.classList.toggle('is-error', !!isError);
+}
+
+function setPoiDeleteBusy(isBusy) {
+  poiDeleteBusy = !!isBusy;
+
+  if (poiDeleteConfirm) {
+    poiDeleteConfirm.disabled = poiDeleteBusy;
+  }
+
+  if (poiDeleteCancel) {
+    poiDeleteCancel.disabled = poiDeleteBusy;
+  }
+
+  if (closePoiDeleteOverlay) {
+    closePoiDeleteOverlay.style.pointerEvents = poiDeleteBusy ? 'none' : 'auto';
+  }
+}
+
+function closePoiDeleteOverlayPanel(forceClose) {
+  if (!poiDeleteOverlay || (poiDeleteBusy && !forceClose)) return;
+
+  poiDeleteOverlay.classList.remove('show');
+  poiDeleteAction = null;
+  setPoiDeleteBusy(false);
+  setPoiDeleteStatus('', false);
+}
+
+function openPoiDeleteOverlay(context, onConfirm) {
+  if (!poiDeleteOverlay) return;
+
+  const safeContext = context && typeof context === 'object' ? context : {};
+  poiDeleteAction = typeof onConfirm === 'function' ? onConfirm : null;
+  setPoiDeleteBusy(false);
+  setPoiDeleteStatus('', false);
+
+  if (poiDeleteQuestion) {
+    poiDeleteQuestion.textContent = safeContext.label
+      ? 'Êtes-vous sûr de vouloir supprimer le point "' + safeContext.label + '" ?'
+      : 'Êtes-vous sûr de vouloir supprimer ce point ?';
+  }
+
+  poiDeleteOverlay.classList.add('show');
+
+  if (poiDeleteCancel) {
+    poiDeleteCancel.focus();
+  } else if (poiDeleteConfirm) {
+    poiDeleteConfirm.focus();
+  }
 }
 
 function selectMap(file, overlay) {
@@ -160,8 +315,9 @@ function closeVisibleOverlays() {
   const closedSearchOverlay = closeOverlay(schOverlay);
   const closedPoiOverlay = closeOverlay(poiOverlay);
   const closedPoiAddOverlay = closeOverlay(poiAddOverlay, closePoiAddOverlayPanel);
+  const closedPoiDeleteOverlay = closeOverlay(poiDeleteOverlay, closePoiDeleteOverlayPanel);
 
-  return closedMapOverlay || closedSearchOverlay || closedPoiOverlay || closedPoiAddOverlay;
+  return closedMapOverlay || closedSearchOverlay || closedPoiOverlay || closedPoiAddOverlay || closedPoiDeleteOverlay;
 }
 
 // Fonction pour charger une carte
@@ -313,6 +469,35 @@ if (closePoiAddOverlay) {
   closePoiAddOverlay.addEventListener('click', closePoiAddOverlayPanel);
 }
 
+if (closePoiDeleteOverlay) {
+  closePoiDeleteOverlay.addEventListener('click', closePoiDeleteOverlayPanel);
+}
+
+if (poiDeleteCancel) {
+  poiDeleteCancel.addEventListener('click', closePoiDeleteOverlayPanel);
+}
+
+if (poiDeleteConfirm) {
+  poiDeleteConfirm.addEventListener('click', async () => {
+    if (poiDeleteBusy || !poiDeleteAction) {
+      return;
+    }
+
+    setPoiDeleteBusy(true);
+    setPoiDeleteStatus('Suppression en cours...', false);
+
+    try {
+      await poiDeleteAction();
+      setPoiDeleteStatus('Point supprimé. Rechargement...', false);
+      closePoiDeleteOverlayPanel(true);
+      window.location.reload();
+    } catch (error) {
+      setPoiDeleteStatus('Impossible de supprimer ce point.', true);
+      setPoiDeleteBusy(false);
+    }
+  });
+}
+
 document.addEventListener('keydown', (event) => {
   if (event.key !== 'Escape') {
     return;
@@ -334,22 +519,63 @@ if (poiAddForm) {
   poiAddForm.addEventListener('submit', (event) => {
     event.preventDefault();
 
-    const lat = poiAddLat ? parseFloat(poiAddLat.value) : NaN;
-    const lng = poiAddLng ? parseFloat(poiAddLng.value) : NaN;
     const label = poiAddLabel ? poiAddLabel.value.trim() : '';
-    const file = poiAddFile ? poiAddFile.value : '';
-    const newFile = poiAddNewFile ? poiAddNewFile.value.trim() : '';
-
-    if (Number.isNaN(lat) || Number.isNaN(lng)) {
-      setPoiAddStatus('Ajoute d’abord un point par appui long sur la carte.', true);
-      return;
-    }
 
     if (!label) {
       setPoiAddStatus('Le nom du point est obligatoire.', true);
       if (poiAddLabel) {
         poiAddLabel.focus();
       }
+      return;
+    }
+
+    if (poiAddMode === 'modify') {
+      const pointId = poiModifyContext && poiModifyContext.pointId ? poiModifyContext.pointId : '';
+      const file = poiModifyContext && poiModifyContext.file ? poiModifyContext.file : '';
+
+      if (!file || !pointId) {
+        setPoiAddStatus('Impossible d’identifier le point à modifier.', true);
+        return;
+      }
+
+      setPoiAddStatus('Enregistrement en cours...', false);
+
+      fetch('?action=modify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          file: file,
+          pointId: pointId,
+          label: label,
+        }),
+      })
+        .then((response) => response.json().then((payload) => ({ response, payload })))
+        .then(({ response, payload }) => {
+          if (!response.ok || !payload || payload.ok !== true) {
+            throw new Error((payload && payload.error) || 'save_failed');
+          }
+
+          setPoiAddStatus('Point modifié. Rechargement...', false);
+          closePoiAddOverlayPanel();
+          window.location.reload();
+        })
+        .catch(() => {
+          setPoiAddStatus('Impossible d’enregistrer la modification.', true);
+        });
+
+      return;
+    }
+
+    const lat = poiAddLat ? parseFloat(poiAddLat.value) : NaN;
+    const lng = poiAddLng ? parseFloat(poiAddLng.value) : NaN;
+    const file = poiAddFile ? poiAddFile.value : '';
+    const newFile = poiAddNewFile ? poiAddNewFile.value.trim() : '';
+
+    if (Number.isNaN(lat) || Number.isNaN(lng)) {
+      setPoiAddStatus('Ajoute d’abord un point par appui long sur la carte.', true);
       return;
     }
 
@@ -392,6 +618,13 @@ if (poiAddForm) {
       });
   });
 }
+
+window.poiAddBridge = {
+  openAddOverlay: openPoiAddOverlayWithTarget,
+  openModifyOverlay: openPoiModifyOverlay,
+  close: closePoiAddOverlayPanel,
+  openDeleteOverlay: openPoiDeleteOverlay,
+};
 
 // Sélection d'une carte
 mapOverlay.querySelectorAll('li').forEach(li => {

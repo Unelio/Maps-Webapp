@@ -327,7 +327,7 @@ class PoiManager
         }
 
         $points[] = [
-          'id' => 'poi-' . substr(sha1(basename($path) . '|' . $index . '|' . $lat . '|' . $lng . '|' . $label), 0, 16),
+          'id' => 'poi-' . substr(sha1(basename($path) . '|' . $index . '|' . $lat . '|' . $lng), 0, 16),
           'label' => $label,
           'description' => $this->childText($xpath, $node, 'desc'),
           'symbol' => $this->childText($xpath, $node, 'sym'),
@@ -347,6 +347,7 @@ class PoiManager
   private function loadConfig(string $configPath, array $points = []): array
   {
     $config = $this->defaultConfig();
+    $pointFileName = preg_replace('/\.json$/i', '.gpx', basename($configPath));
 
     if (is_readable($configPath)) {
       $decoded = json_decode((string)file_get_contents($configPath), true);
@@ -368,14 +369,18 @@ class PoiManager
 
     $normalized = [];
 
-    foreach ($points as $point) {
+    foreach ($points as $index => $point) {
       $visible = true;
+      $currentId = (string)($point['id'] ?? '');
+      $legacyId = 'poi-' . substr(sha1($pointFileName . '|' . $index . '|' . $point['lat'] . '|' . $point['lng'] . '|' . $point['label']), 0, 16);
 
-      if (isset($config['points'][$point['id']]) && is_array($config['points'][$point['id']])) {
-        $visible = array_key_exists('visible', $config['points'][$point['id']]) ? (bool)$config['points'][$point['id']]['visible'] : true;
+      if (isset($config['points'][$currentId]) && is_array($config['points'][$currentId])) {
+        $visible = array_key_exists('visible', $config['points'][$currentId]) ? (bool)$config['points'][$currentId]['visible'] : true;
+      } elseif (isset($config['points'][$legacyId]) && is_array($config['points'][$legacyId])) {
+        $visible = array_key_exists('visible', $config['points'][$legacyId]) ? (bool)$config['points'][$legacyId]['visible'] : true;
       }
 
-      $normalized[$point['id']] = [
+      $normalized[$currentId] = [
         'visible' => $visible,
       ];
     }
