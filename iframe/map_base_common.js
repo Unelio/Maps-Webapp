@@ -135,6 +135,17 @@
     poiLongPressStart = null;
   }
 
+  function setUserLocation(latlng) {
+    if (!latlng) return;
+
+    if (userMarker) {
+      userMarker.setLatLng(latlng);
+      return;
+    }
+
+    userMarker = L.marker(latlng, { icon: userLocationIcon }).addTo(map);
+  }
+
   function requestPoiAdd(latlng) {
     if (!latlng || Number.isNaN(latlng.lat) || Number.isNaN(latlng.lng)) return;
 
@@ -206,11 +217,7 @@
         function (pos) {
           var latlng = [pos.coords.latitude, pos.coords.longitude];
           map.flyTo(latlng, locationZoom);
-          if (!userMarker) {
-            userMarker = L.marker(latlng, { icon: userLocationIcon }).addTo(map);
-          } else {
-            userMarker.setLatLng(latlng);
-          }
+          setUserLocation(latlng);
         },
         function (err) {
           if (isLocalMap) return;
@@ -251,7 +258,8 @@
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
       function (pos) {
-        L.marker([pos.coords.latitude, pos.coords.longitude], { icon: userLocationIcon }).addTo(map).openPopup();
+        var latlng = [pos.coords.latitude, pos.coords.longitude];
+        setUserLocation(latlng);
       },
       isLocalMap ? function () { } : function (err) { console.warn('Erreur géolocalisation:', err.message); },
       { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
