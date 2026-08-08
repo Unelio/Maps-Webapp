@@ -1226,10 +1226,12 @@ body > main form input[type="submit"]:hover {
     transform: translateY(-10%); /* Remonte le bloc de 10% */
   }
 
+  .poi-folder-header,
   .poi-point {
     padding-right: 6px;
   }
 
+  .poi-folder-actions,
   .poi-point-actions {
     margin-right: 0;
   }
