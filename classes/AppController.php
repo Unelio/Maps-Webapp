@@ -196,7 +196,7 @@ class AppController
       . '</div>';
 
     if (empty($poiFiles)) {
-      $poiPanelHtml .= '<div class="poi-empty">Aucun GPX trouvé dans le dossier data.</div>';
+      $poiPanelHtml .= '<div class="poi-empty">Aucun point ajouté pour l’instant</div>';
     } else {
       $poiPanelHtml .= '<div class="poi-tree-scroll"><div class="poi-tree" id="poiTree">';
 

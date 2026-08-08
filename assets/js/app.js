@@ -121,6 +121,10 @@ function setPoiAddOverlayMode(mode, context) {
   poiAddMode = mode === 'modify' ? 'modify' : 'add';
   poiModifyContext = poiAddMode === 'modify' && context ? context : null;
 
+  if (poiAddForm) {
+    poiAddForm.noValidate = poiAddMode === 'modify';
+  }
+
   const titleNode = poiAddOverlay ? poiAddOverlay.querySelector('h2') : null;
   const submitButton = poiAddForm ? poiAddForm.querySelector('.poi-add-submit') : null;
   const cancelButton = poiAddCancel;
@@ -147,6 +151,16 @@ function setPoiAddOverlayMode(mode, context) {
 
     if (newFileField) {
       newFileField.hidden = true;
+    }
+
+    if (poiAddFile) {
+      poiAddFile.required = false;
+      poiAddFile.disabled = true;
+    }
+
+    if (poiAddNewFile) {
+      poiAddNewFile.required = false;
+      poiAddNewFile.disabled = true;
     }
 
     if (targetLabel) {
@@ -187,8 +201,30 @@ function setPoiAddOverlayMode(mode, context) {
     newFileField.hidden = false;
   }
 
+  if (poiAddFile) {
+    poiAddFile.disabled = false;
+    poiAddFile.value = newPoiFileValue;
+  }
+
+  if (poiAddNewFile) {
+    poiAddNewFile.disabled = false;
+    poiAddNewFile.value = '';
+  }
+
   if (targetLabel) {
     targetLabel.textContent = 'Appui long sur la carte pour choisir la position.';
+  }
+
+  if (poiAddLabel) {
+    poiAddLabel.value = '';
+  }
+
+  if (poiAddLat) {
+    poiAddLat.value = '';
+  }
+
+  if (poiAddLng) {
+    poiAddLng.value = '';
   }
 
   if (poiAddFile) {
@@ -217,6 +253,35 @@ function updatePoiAddFileMode() {
   const createNewFile = poiAddFile.value === newPoiFileValue;
   poiAddNewFileWrap.hidden = !createNewFile;
   poiAddNewFile.required = createNewFile;
+}
+
+function formatPoiFolderLabel(fileName) {
+  return String(fileName || '')
+    .replace(/[_-]+/g, ' ')
+    .trim();
+}
+
+function ensurePoiAddFileOption(fileKey, displayLabel) {
+  if (!poiAddFile || !fileKey) return;
+
+  const labelText = String(displayLabel || '').trim() || formatPoiFolderLabel(fileKey) || fileKey;
+  const existingOption = Array.from(poiAddFile.options).find((option) => option.value === fileKey);
+
+  if (existingOption) {
+    existingOption.textContent = labelText;
+    return;
+  }
+
+  const option = document.createElement('option');
+  option.value = fileKey;
+  option.textContent = labelText;
+
+  const newFileOption = Array.from(poiAddFile.options).find((entry) => entry.value === newPoiFileValue);
+  if (newFileOption) {
+    poiAddFile.insertBefore(option, newFileOption);
+  } else {
+    poiAddFile.appendChild(option);
+  }
 }
 
 function openPoiAddOverlayWithTarget(coords) {
@@ -598,12 +663,21 @@ if (poiDeleteConfirm) {
     setPoiDeleteStatus(poiDeleteContext && poiDeleteContext.busyMessage ? poiDeleteContext.busyMessage : 'Suppression en cours...', false);
 
     try {
+      const deleteFile = poiDeleteContext && poiDeleteContext.file ? poiDeleteContext.file : '';
+      const deleteType = poiDeleteContext && poiDeleteContext.type === 'folder' ? 'folder' : 'point';
       await poiDeleteAction();
-      setPoiDeleteStatus(poiDeleteContext && poiDeleteContext.successMessage ? poiDeleteContext.successMessage : 'Point supprimé. Rechargement...', false);
+      setPoiDeleteStatus(poiDeleteContext && poiDeleteContext.successMessage ? poiDeleteContext.successMessage : (deleteType === 'folder' ? 'Dossier supprimé.' : 'Point supprimé.'), false);
       closePoiDeleteOverlayPanel(true);
-      window.location.reload();
+
+      if (window.poiBridge) {
+        if (deleteType === 'folder' && typeof window.poiBridge.removeFile === 'function') {
+          window.poiBridge.removeFile(deleteFile);
+        } else if (deleteFile && typeof window.poiBridge.refreshFile === 'function') {
+          window.poiBridge.refreshFile(deleteFile);
+        }
+      }
     } catch (error) {
-      setPoiDeleteStatus(poiDeleteContext && poiDeleteContext.errorMessage ? poiDeleteContext.errorMessage : 'Impossible de supprimer ce point.', true);
+      setPoiDeleteStatus(poiDeleteContext && poiDeleteContext.errorMessage ? poiDeleteContext.errorMessage : (poiDeleteContext && poiDeleteContext.type === 'folder' ? 'Impossible de supprimer ce dossier.' : 'Impossible de supprimer ce point.'), true);
       setPoiDeleteBusy(false);
     }
   });
@@ -701,9 +775,12 @@ if (poiAddForm) {
             throw new Error((payload && payload.error) || 'save_failed');
           }
 
-          setPoiAddStatus('Point modifié. Rechargement...', false);
+          setPoiAddStatus('Point modifié.', false);
           closePoiAddOverlayPanel();
-          window.location.reload();
+
+          if (window.poiBridge && typeof window.poiBridge.refreshFile === 'function') {
+            window.poiBridge.refreshFile(file);
+          }
         })
         .catch(() => {
           setPoiAddStatus('Impossible d’enregistrer la modification.', true);
@@ -752,9 +829,30 @@ if (poiAddForm) {
           throw new Error((payload && payload.error) || 'save_failed');
         }
 
-        setPoiAddStatus('Point ajouté. Rechargement...', false);
+        setPoiAddStatus('Point ajouté.', false);
         closePoiAddOverlayPanel();
-        window.location.reload();
+
+        const createdFile = payload.file || file;
+        const isNewFolder = file === newPoiFileValue;
+
+        if (isNewFolder) {
+          ensurePoiAddFileOption(createdFile, newFile || createdFile);
+
+          if (window.poiBridge && typeof window.poiBridge.registerFile === 'function') {
+            window.poiBridge.registerFile(createdFile, {
+              label: newFile || createdFile,
+              folderVisible: true,
+            });
+          }
+
+          if (poiAddFile) {
+            poiAddFile.value = createdFile;
+          }
+        }
+
+        if (window.poiBridge && typeof window.poiBridge.refreshFile === 'function') {
+          window.poiBridge.refreshFile(createdFile);
+        }
       })
       .catch(() => {
         setPoiAddStatus('Impossible d’enregistrer le point.', true);

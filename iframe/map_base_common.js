@@ -344,6 +344,20 @@
       focusPoiPoint(data);
     } else if (data.type === 'poiSyncFile') {
       syncPoiFile(data);
+    } else if (data.type === 'poiRemoveFile') {
+      if (!data.file) return;
+
+      if (poiLayers[data.file]) {
+        poiLayers[data.file].clearLayers();
+        if (map && typeof map.removeLayer === 'function' && map.hasLayer && map.hasLayer(poiLayers[data.file])) {
+          map.removeLayer(poiLayers[data.file]);
+        }
+        delete poiLayers[data.file];
+      }
+
+      if (poiMarkers[data.file]) {
+        delete poiMarkers[data.file];
+      }
     }
   });
 

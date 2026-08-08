@@ -79,6 +79,26 @@
     );
   }
 
+  function compareCatalogEntries(firstEntry, secondEntry) {
+    const firstLabel = normalizeSortValue(firstEntry && firstEntry.label);
+    const secondLabel = normalizeSortValue(secondEntry && secondEntry.label);
+
+    const labelComparison = firstLabel.localeCompare(secondLabel, 'fr', {
+      sensitivity: 'base',
+      numeric: true,
+    });
+
+    if (labelComparison !== 0) {
+      return labelComparison;
+    }
+
+    return normalizeSortValue(firstEntry && firstEntry.file).localeCompare(
+      normalizeSortValue(secondEntry && secondEntry.file),
+      'fr',
+      { sensitivity: 'base', numeric: true }
+    );
+  }
+
   function renderEyeIcon(visible) {
     return '<span class="poi-eye-icon' + (visible ? '' : ' is-hidden') + '" aria-hidden="true"><span class="poi-eye-glyph"></span><span class="poi-eye-slash"></span></span>';
   }
@@ -93,6 +113,126 @@
     return '' +
       '<button class="poi-folder-menu-item" type="button" data-folder-action="rename">Renommer</button>' +
       '<button class="poi-folder-menu-item is-danger" type="button" data-folder-action="delete">Supprimer</button>';
+  }
+
+  function createFolderSection(entry) {
+    const fileName = String(entry && entry.file ? entry.file : '');
+    const label = String(entry && entry.label ? entry.label : fileName);
+    const visibleCount = Number.isFinite(Number(entry && entry.visibleCount)) ? Number(entry.visibleCount) : 0;
+    const totalCount = Number.isFinite(Number(entry && entry.totalCount)) ? Number(entry.totalCount) : 0;
+    const folderVisible = !entry || entry.folderVisible !== false;
+    const ariaLabel = folderVisible ? 'Masquer tous les points' : 'Afficher tous les points';
+    const eyeClass = folderVisible ? '' : ' is-hidden';
+
+    return '<section class="poi-folder" data-file="' + escapeHtml(fileName) + '">' +
+      '<div class="poi-folder-header">' +
+      '<button class="poi-folder-toggle" type="button" aria-label="' + escapeHtml(ariaLabel) + '" title="' + escapeHtml(ariaLabel) + '"><span class="poi-eye-icon' + eyeClass + '" aria-hidden="true"><span class="poi-eye-glyph"></span><span class="poi-eye-slash"></span></span></button>' +
+      '<div class="poi-folder-meta">' +
+      '<div class="poi-folder-title">' + escapeHtml(label) + '</div>' +
+      '<div class="poi-folder-count"><span class="poi-visible-count">' + visibleCount + '</span>/<span class="poi-total-count">' + totalCount + '</span> points</div>' +
+      '</div>' +
+      '<div class="poi-folder-actions">' +
+      '<button class="poi-folder-menu-toggle" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Actions du dossier">⋮</button>' +
+      '</div>' +
+      '</div>' +
+      '<ul class="poi-point-list is-collapsed" data-loaded="false"></ul>' +
+      '</section>';
+  }
+
+  function updateCatalogSummary() {
+    const summary = overlay ? overlay.querySelector('.poi-summary') : null;
+    if (summary) {
+      summary.textContent = poiCatalog.length + ' dossier(s)';
+    }
+  }
+
+  function updateEmptyCatalogState() {
+    if (!overlay) return;
+
+    const treeScroll = overlay.querySelector('.poi-tree-scroll');
+    const tree = overlay.querySelector('.poi-tree');
+    const empty = overlay.querySelector('.poi-empty');
+
+    if (poiCatalog.length === 0) {
+      if (!empty) {
+        const emptyNode = document.createElement('div');
+        emptyNode.className = 'poi-empty';
+        emptyNode.textContent = 'Aucun point ajouté pour l’instant';
+        if (treeScroll) {
+          treeScroll.appendChild(emptyNode);
+        } else if (tree && tree.parentNode) {
+          tree.parentNode.insertBefore(emptyNode, tree.nextSibling);
+        } else {
+          overlay.appendChild(emptyNode);
+        }
+      }
+      return;
+    }
+
+    if (empty) {
+      empty.remove();
+    }
+  }
+
+  function ensureCatalogTree() {
+    if (!overlay) return null;
+
+    const existingTree = overlay.querySelector('.poi-tree');
+    if (existingTree) {
+      return existingTree;
+    }
+
+    const panel = overlay.querySelector('.poi-panel');
+    if (!panel) {
+      return null;
+    }
+
+    const empty = overlay.querySelector('.poi-empty');
+    if (empty) {
+      empty.remove();
+    }
+
+    const treeScroll = document.createElement('div');
+    treeScroll.className = 'poi-tree-scroll';
+
+    const tree = document.createElement('div');
+    tree.className = 'poi-tree';
+    tree.id = 'poiTree';
+
+    treeScroll.appendChild(tree);
+
+    const header = panel.querySelector('.poi-header');
+    if (header && header.nextSibling) {
+      panel.insertBefore(treeScroll, header.nextSibling);
+    } else {
+      panel.appendChild(treeScroll);
+    }
+
+    return tree;
+  }
+
+  function insertFolderSection(entry) {
+    if (!overlay || !entry || !entry.file) return;
+
+    const tree = ensureCatalogTree();
+    if (!tree) return;
+
+    const template = document.createElement('div');
+    template.innerHTML = createFolderSection(entry);
+    const section = template.firstElementChild;
+    if (!section) return;
+
+    const existingRows = Array.from(tree.querySelectorAll('.poi-folder'));
+    const beforeNode = existingRows.find(function (row) {
+      const rowEntry = getFileEntry(row.dataset.file || '');
+      return rowEntry ? compareCatalogEntries(entry, rowEntry) < 0 : false;
+    }) || null;
+
+    if (beforeNode) {
+      tree.insertBefore(section, beforeNode);
+    } else {
+      tree.appendChild(section);
+    }
   }
 
   function ensurePointMenuElement() {
@@ -303,6 +443,58 @@
         poiState[entry.file] = cloneStateForFile(entry.file);
       }
     });
+  }
+
+  function registerFile(fileKey, fileData = {}) {
+    const file = String(fileKey || '').trim();
+    if (!file) {
+      return null;
+    }
+
+    const existing = getFileEntry(file);
+    if (existing) {
+      if (typeof fileData.label === 'string' && fileData.label.trim()) {
+        existing.label = fileData.label.trim();
+      }
+      if (Number.isFinite(Number(fileData.visibleCount))) {
+        existing.visibleCount = Number(fileData.visibleCount);
+      }
+      if (Number.isFinite(Number(fileData.totalCount))) {
+        existing.totalCount = Number(fileData.totalCount);
+      }
+      if (typeof fileData.folderVisible === 'boolean') {
+        existing.folderVisible = fileData.folderVisible;
+      }
+      updateCatalogSummary();
+      updateVisibilityCount(file);
+      return existing;
+    }
+
+    const entry = {
+      file: file,
+      label: typeof fileData.label === 'string' && fileData.label.trim() ? fileData.label.trim() : file,
+      visibleCount: Number.isFinite(Number(fileData.visibleCount)) ? Number(fileData.visibleCount) : 0,
+      totalCount: Number.isFinite(Number(fileData.totalCount)) ? Number(fileData.totalCount) : 0,
+      folderVisible: typeof fileData.folderVisible === 'boolean' ? fileData.folderVisible : true,
+    };
+
+    const insertIndex = poiCatalog.findIndex(function (currentEntry) {
+      return compareCatalogEntries(entry, currentEntry) < 0;
+    });
+
+    if (insertIndex === -1) {
+      poiCatalog.push(entry);
+    } else {
+      poiCatalog.splice(insertIndex, 0, entry);
+    }
+
+    poiState[file] = cloneStateForFile(file);
+    poiState[file].folderVisible = entry.folderVisible;
+
+    insertFolderSection(entry);
+    updateCatalogSummary();
+    updateEmptyCatalogState();
+    return entry;
   }
 
   function getFileEntry(fileKey) {
@@ -645,6 +837,32 @@
     });
   }
 
+  function removeFileFromCatalog(fileKey) {
+    if (!fileKey) return;
+
+    closePointMenu();
+    closeFolderMenu();
+
+    const container = overlay ? overlay.querySelector('.poi-folder[data-file="' + escapeSelectorValue(fileKey) + '"]') : null;
+    if (container && typeof container.remove === 'function') {
+      container.remove();
+    }
+
+    poiCatalog = poiCatalog.filter(entry => entry.file !== fileKey);
+    delete poiState[fileKey];
+    writePersistedState();
+
+    updateCatalogSummary();
+    updateEmptyCatalogState();
+
+    if (window.mapBridge && typeof window.mapBridge.postToIframe === 'function') {
+      window.mapBridge.postToIframe({
+        type: 'poiRemoveFile',
+        file: fileKey,
+      });
+    }
+  }
+
   async function toggleFolderExpansion(fileKey) {
     const state = getFileState(fileKey);
     if (!state) return;
@@ -913,6 +1131,7 @@
   }
 
   ensureState();
+  updateEmptyCatalogState();
   poiCatalog.forEach(entry => {
     const state = getFileState(entry.file);
     if (state && !state.loaded && state.folderVisible) {
@@ -923,7 +1142,10 @@
   });
 
   window.poiBridge = {
+    registerFile: registerFile,
     syncAll: syncAllPoiFiles,
     syncFile: syncFileToMap,
+    refreshFile: refreshFileDetails,
+    removeFile: removeFileFromCatalog,
   };
 })();
