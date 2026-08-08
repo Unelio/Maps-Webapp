@@ -56,7 +56,7 @@ class AppController
       return true;
     }
 
-    if (!in_array($action, ['load', 'save', 'add', 'modify', 'delete', 'search', 'settings'], true)) {
+    if (!in_array($action, ['load', 'save', 'add', 'modify', 'delete', 'rename-folder', 'delete-folder', 'search', 'settings'], true)) {
       return false;
     }
 
@@ -88,6 +88,14 @@ class AppController
         $poiDeleteManager = new PoiDeleteManager($this->baseDir);
 
         if ($poiDeleteManager->dispatchAction($action, $_SERVER['REQUEST_METHOD'] ?? 'GET')) {
+          return true;
+        }
+      }
+
+      if ($action === 'rename-folder' || $action === 'delete-folder') {
+        $poiFolderManager = new PoiFolderManager($this->baseDir);
+
+        if ($poiFolderManager->dispatchAction($action, $_SERVER['REQUEST_METHOD'] ?? 'GET')) {
           return true;
         }
       }
@@ -174,6 +182,7 @@ class AppController
       'MAP_OPTIONS' => $this->buildMapOptionsHtml($maps),
       'POI_PANEL' => $this->buildPoiPanelHtml($poiFiles),
       'POI_ADD_OVERLAY' => $this->buildPoiAddOverlayHtml($poiFiles),
+      'POI_FOLDER_RENAME_OVERLAY' => $this->buildPoiFolderRenameOverlayHtml(),
       'POI_DELETE_OVERLAY' => $this->buildPoiDeleteOverlayHtml(),
     ]);
   }
@@ -201,12 +210,15 @@ class AppController
         $ariaLabel = $folderVisible ? 'Masquer tous les points' : 'Afficher tous les points';
         $eyeClass = $folderVisible ? '' : ' is-hidden';
 
-        $poiPanelHtml .= '<section class="poi-file" data-file="' . $fileName . '">'
-          . '<div class="poi-file-header">'
+        $poiPanelHtml .= '<section class="poi-folder" data-file="' . $fileName . '">'
+          . '<div class="poi-folder-header">'
           . '<button class="poi-folder-toggle" type="button" aria-label="' . $ariaLabel . '" title="' . $ariaLabel . '"><span class="poi-eye-icon' . $eyeClass . '" aria-hidden="true"><span class="poi-eye-glyph"></span><span class="poi-eye-slash"></span></span></button>'
-          . '<div class="poi-file-meta">'
-          . '<div class="poi-file-title">' . $label . '</div>'
-          . '<div class="poi-file-count"><span class="poi-visible-count">' . $visibleCount . '</span>/<span class="poi-total-count">' . $totalCount . '</span> points</div>'
+          . '<div class="poi-folder-meta">'
+          . '<div class="poi-folder-title">' . $label . '</div>'
+          . '<div class="poi-folder-count"><span class="poi-visible-count">' . $visibleCount . '</span>/<span class="poi-total-count">' . $totalCount . '</span> points</div>'
+          . '</div>'
+          . '<div class="poi-folder-actions">'
+          . '<button class="poi-folder-menu-toggle" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Actions du dossier">⋮</button>'
           . '</div>'
           . '</div>'
           . '<ul class="poi-point-list is-collapsed" id="' . htmlspecialchars($fileId, ENT_QUOTES, 'UTF-8') . '" data-loaded="false"></ul>'
@@ -232,7 +244,7 @@ class AppController
       . '<div class="poi-add-header">'
       . '<div>'
       . '<h2>Ajouter un point</h2>'
-      . '<div class="poi-add-summary" id="poiAddCoords">Appui long sur la carte pour choisir la position.</div>'
+      . '<div class="poi-add-summary" id="poiAddCoords">Appui long sur la carte pour choisir une position.</div>'
       . '</div>'
       . '</div>'
       . '<form id="poiAddForm">'
@@ -253,6 +265,7 @@ class AppController
       . '<input id="poiAddLat" type="hidden">'
       . '<input id="poiAddLng" type="hidden">'
       . '<div class="poi-add-actions">'
+      . '<button type="button" class="poi-delete-cancel" id="poiAddCancel">Annuler</button>'
       . '<button type="submit" class="poi-add-submit">Ajouter</button>'
       . '</div>'
       . '<div id="poiAddStatus" class="poi-add-status" aria-live="polite"></div>'
@@ -279,6 +292,32 @@ class AppController
       . '<button type="button" class="poi-delete-cancel" id="poiDeleteCancel">Annuler</button>'
       . '<button type="button" class="poi-delete-confirm" id="poiDeleteConfirm">Supprimer</button>'
       . '</div>'
+      . '</div>'
+      . '</div>';
+  }
+
+  private function buildPoiFolderRenameOverlayHtml(): string
+  {
+    return '<div id="poiFolderRenameOverlay" role="dialog" aria-modal="true" aria-labelledby="poiFolderRenameTitle">'
+      . '<span id="closePoiFolderRenameOverlay">&times;</span>'
+      . '<div class="poi-add-panel">'
+      . '<div class="poi-add-header">'
+      . '<div>'
+      . '<h2 id="poiFolderRenameTitle">Renommer un dossier</h2>'
+      . '<div class="poi-add-summary" id="poiFolderRenameSummary">Saisis le nouveau nom du dossier.</div>'
+      . '</div>'
+      . '</div>'
+      . '<form id="poiFolderRenameForm">'
+      . '<label class="poi-add-field">'
+      . '<span>Nouveau nom du dossier</span>'
+      . '<input id="poiFolderRenameInput" type="text" maxlength="120" autocomplete="off" placeholder="Nouveau nom du dossier" required>'
+      . '</label>'
+      . '<div class="poi-add-actions">'
+      . '<button type="button" class="poi-delete-cancel" id="poiFolderRenameCancel">Annuler</button>'
+      . '<button type="submit" class="poi-add-submit" id="poiFolderRenameConfirm">Renommer</button>'
+      . '</div>'
+      . '<div id="poiFolderRenameStatus" class="poi-add-status" aria-live="polite"></div>'
+      . '</form>'
       . '</div>'
       . '</div>';
   }

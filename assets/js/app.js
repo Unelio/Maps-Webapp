@@ -10,6 +10,15 @@ const closeSchOverlay = document.getElementById('closeSchOverlay');
 const closePoiOverlay = document.getElementById('closePoiOverlay');
 const poiAddOverlay = document.getElementById('poiAddOverlay');
 const closePoiAddOverlay = document.getElementById('closePoiAddOverlay');
+const poiFolderRenameOverlay = document.getElementById('poiFolderRenameOverlay');
+const closePoiFolderRenameOverlay = document.getElementById('closePoiFolderRenameOverlay');
+const poiFolderRenameForm = document.getElementById('poiFolderRenameForm');
+const poiFolderRenameInput = document.getElementById('poiFolderRenameInput');
+const poiFolderRenameCancel = document.getElementById('poiFolderRenameCancel');
+const poiFolderRenameConfirm = document.getElementById('poiFolderRenameConfirm');
+const poiFolderRenameTitle = document.getElementById('poiFolderRenameTitle');
+const poiFolderRenameSummary = document.getElementById('poiFolderRenameSummary');
+const poiFolderRenameStatus = document.getElementById('poiFolderRenameStatus');
 const poiDeleteOverlay = document.getElementById('poiDeleteOverlay');
 const closePoiDeleteOverlay = document.getElementById('closePoiDeleteOverlay');
 const poiDeleteCancel = document.getElementById('poiDeleteCancel');
@@ -25,6 +34,7 @@ const poiAddLat = document.getElementById('poiAddLat');
 const poiAddLng = document.getElementById('poiAddLng');
 const poiAddCoords = document.getElementById('poiAddCoords');
 const poiAddStatus = document.getElementById('poiAddStatus');
+const poiAddCancel = document.getElementById('poiAddCancel');
 const openPoiAddOverlay = document.getElementById('openPoiAddOverlay');
 const mapTitle = document.getElementById('mapTitle');
 const mapIcon = document.getElementById('mapIcon');
@@ -41,8 +51,11 @@ let currentZoom = Number.isFinite(window.defaultZoom) ? window.defaultZoom : 5;
 let currentCenter = normalizeCenter(window.defaultCenter, { lat: 48.854659, lng: 2.347872 });
 let poiAddMode = 'add';
 let poiModifyContext = null;
+let poiDeleteContext = null;
 let poiDeleteAction = null;
 let poiDeleteBusy = false;
+let poiFolderRenameAction = null;
+let poiFolderRenameBusy = false;
 
 function normalizeCoordinatePair(latValue, lngValue, fallback) {
   const fallbackCenter = fallback || { lat: 48.854659, lng: 2.347872 };
@@ -110,6 +123,7 @@ function setPoiAddOverlayMode(mode, context) {
 
   const titleNode = poiAddOverlay ? poiAddOverlay.querySelector('h2') : null;
   const submitButton = poiAddForm ? poiAddForm.querySelector('.poi-add-submit') : null;
+  const cancelButton = poiAddCancel;
   const fileField = poiAddFile ? poiAddFile.closest('.poi-add-field') : null;
   const newFileField = poiAddNewFileWrap ? poiAddNewFileWrap : null;
   const targetLabel = poiAddCoords;
@@ -123,6 +137,10 @@ function setPoiAddOverlayMode(mode, context) {
       submitButton.textContent = 'Modifier';
     }
 
+    if (cancelButton) {
+      cancelButton.hidden = false;
+    }
+
     if (fileField) {
       fileField.hidden = true;
     }
@@ -132,9 +150,14 @@ function setPoiAddOverlayMode(mode, context) {
     }
 
     if (targetLabel) {
-      targetLabel.textContent = poiModifyContext && poiModifyContext.label
-        ? 'Point à modifier: ' + poiModifyContext.label
-        : 'Modifier le nom du point.';
+      const modifyLat = poiModifyContext && poiModifyContext.coords ? poiModifyContext.coords.lat : null;
+      const modifyLng = poiModifyContext && poiModifyContext.coords ? poiModifyContext.coords.lng : null;
+
+      targetLabel.textContent = modifyLat != null && modifyLng != null
+        ? 'Position : ' + formatPoiCoordinate(modifyLat) + ', ' + formatPoiCoordinate(modifyLng)
+        : poiModifyContext && poiModifyContext.label
+          ? 'Point à modifier : ' + poiModifyContext.label
+          : 'Modifier le nom du point.';
     }
 
     if (poiAddFile && poiModifyContext && poiModifyContext.file) {
@@ -150,6 +173,10 @@ function setPoiAddOverlayMode(mode, context) {
 
   if (submitButton) {
     submitButton.textContent = 'Ajouter';
+  }
+
+  if (cancelButton) {
+    cancelButton.hidden = false;
   }
 
   if (fileField) {
@@ -178,7 +205,7 @@ function setPoiAddTarget(coords) {
   poiAddLat.value = lat != null ? String(lat) : '';
   poiAddLng.value = lng != null ? String(lng) : '';
   poiAddCoords.textContent = lat != null && lng != null
-    ? 'Position: ' + formatPoiCoordinate(lat) + ', ' + formatPoiCoordinate(lng)
+    ? 'Position : ' + formatPoiCoordinate(lat) + ', ' + formatPoiCoordinate(lng)
     : 'Appui long sur la carte pour choisir la position.';
 }
 
@@ -213,8 +240,14 @@ function openPoiModifyOverlay(context) {
     file: String(safeContext.file || ''),
     pointId: String(safeContext.pointId || ''),
     label: String(safeContext.label || ''),
+    coords: safeContext.coords && typeof safeContext.coords === 'object'
+      ? {
+          lat: safeContext.coords.lat,
+          lng: safeContext.coords.lng,
+        }
+      : null,
   });
-  setPoiAddTarget(null);
+  setPoiAddTarget(safeContext.coords || null);
   setPoiAddStatus('', false);
   poiAddOverlay.classList.add('show');
 
@@ -257,11 +290,35 @@ function setPoiDeleteBusy(isBusy) {
   }
 }
 
+function setPoiFolderRenameStatus(message, isError) {
+  if (!poiFolderRenameStatus) return;
+
+  poiFolderRenameStatus.textContent = message || '';
+  poiFolderRenameStatus.classList.toggle('is-error', !!isError);
+}
+
+function setPoiFolderRenameBusy(isBusy) {
+  poiFolderRenameBusy = !!isBusy;
+
+  if (poiFolderRenameConfirm) {
+    poiFolderRenameConfirm.disabled = poiFolderRenameBusy;
+  }
+
+  if (poiFolderRenameCancel) {
+    poiFolderRenameCancel.disabled = poiFolderRenameBusy;
+  }
+
+  if (closePoiFolderRenameOverlay) {
+    closePoiFolderRenameOverlay.style.pointerEvents = poiFolderRenameBusy ? 'none' : 'auto';
+  }
+}
+
 function closePoiDeleteOverlayPanel(forceClose) {
   if (!poiDeleteOverlay || (poiDeleteBusy && !forceClose)) return;
 
   poiDeleteOverlay.classList.remove('show');
   poiDeleteAction = null;
+  poiDeleteContext = null;
   setPoiDeleteBusy(false);
   setPoiDeleteStatus('', false);
 }
@@ -270,14 +327,16 @@ function openPoiDeleteOverlay(context, onConfirm) {
   if (!poiDeleteOverlay) return;
 
   const safeContext = context && typeof context === 'object' ? context : {};
+  poiDeleteContext = safeContext;
   poiDeleteAction = typeof onConfirm === 'function' ? onConfirm : null;
   setPoiDeleteBusy(false);
   setPoiDeleteStatus('', false);
 
   if (poiDeleteQuestion) {
+    const itemType = safeContext.type === 'folder' ? 'dossier' : 'point';
     poiDeleteQuestion.textContent = safeContext.label
-      ? 'Êtes-vous sûr de vouloir supprimer le point "' + safeContext.label + '" ?'
-      : 'Êtes-vous sûr de vouloir supprimer ce point ?';
+      ? 'Êtes-vous sûr de vouloir supprimer le ' + itemType + ' "' + safeContext.label + '" ?'
+      : 'Êtes-vous sûr de vouloir supprimer ce ' + itemType + ' ?';
   }
 
   poiDeleteOverlay.classList.add('show');
@@ -286,6 +345,45 @@ function openPoiDeleteOverlay(context, onConfirm) {
     poiDeleteCancel.focus();
   } else if (poiDeleteConfirm) {
     poiDeleteConfirm.focus();
+  }
+}
+
+function closePoiFolderRenameOverlayPanel(forceClose) {
+  if (!poiFolderRenameOverlay || (poiFolderRenameBusy && !forceClose)) return;
+
+  poiFolderRenameOverlay.classList.remove('show');
+  poiFolderRenameAction = null;
+  setPoiFolderRenameBusy(false);
+  setPoiFolderRenameStatus('', false);
+}
+
+function openPoiFolderRenameOverlay(context, onConfirm) {
+  if (!poiFolderRenameOverlay) return;
+
+  const safeContext = context && typeof context === 'object' ? context : {};
+  poiFolderRenameAction = typeof onConfirm === 'function' ? onConfirm : null;
+  setPoiFolderRenameBusy(false);
+  setPoiFolderRenameStatus('', false);
+
+  if (poiFolderRenameTitle) {
+    poiFolderRenameTitle.textContent = 'Renommer un dossier';
+  }
+
+  if (poiFolderRenameSummary) {
+    poiFolderRenameSummary.textContent = safeContext.label
+      ? 'Ancien nom : "' + safeContext.label + '"'
+      : 'Saisis le nouveau nom du dossier.';
+  }
+
+  if (poiFolderRenameInput) {
+    poiFolderRenameInput.value = safeContext.label || '';
+  }
+
+  poiFolderRenameOverlay.classList.add('show');
+
+  if (poiFolderRenameInput) {
+    poiFolderRenameInput.focus();
+    poiFolderRenameInput.select();
   }
 }
 
@@ -315,9 +413,10 @@ function closeVisibleOverlays() {
   const closedSearchOverlay = closeOverlay(schOverlay);
   const closedPoiOverlay = closeOverlay(poiOverlay);
   const closedPoiAddOverlay = closeOverlay(poiAddOverlay, closePoiAddOverlayPanel);
+  const closedPoiFolderRenameOverlay = closeOverlay(poiFolderRenameOverlay, closePoiFolderRenameOverlayPanel);
   const closedPoiDeleteOverlay = closeOverlay(poiDeleteOverlay, closePoiDeleteOverlayPanel);
 
-  return closedMapOverlay || closedSearchOverlay || closedPoiOverlay || closedPoiAddOverlay || closedPoiDeleteOverlay;
+  return closedMapOverlay || closedSearchOverlay || closedPoiOverlay || closedPoiAddOverlay || closedPoiFolderRenameOverlay || closedPoiDeleteOverlay;
 }
 
 // Fonction pour charger une carte
@@ -469,6 +568,18 @@ if (closePoiAddOverlay) {
   closePoiAddOverlay.addEventListener('click', closePoiAddOverlayPanel);
 }
 
+if (poiAddCancel) {
+  poiAddCancel.addEventListener('click', closePoiAddOverlayPanel);
+}
+
+if (closePoiFolderRenameOverlay) {
+  closePoiFolderRenameOverlay.addEventListener('click', closePoiFolderRenameOverlayPanel);
+}
+
+if (poiFolderRenameCancel) {
+  poiFolderRenameCancel.addEventListener('click', closePoiFolderRenameOverlayPanel);
+}
+
 if (closePoiDeleteOverlay) {
   closePoiDeleteOverlay.addEventListener('click', closePoiDeleteOverlayPanel);
 }
@@ -484,16 +595,48 @@ if (poiDeleteConfirm) {
     }
 
     setPoiDeleteBusy(true);
-    setPoiDeleteStatus('Suppression en cours...', false);
+    setPoiDeleteStatus(poiDeleteContext && poiDeleteContext.busyMessage ? poiDeleteContext.busyMessage : 'Suppression en cours...', false);
 
     try {
       await poiDeleteAction();
-      setPoiDeleteStatus('Point supprimé. Rechargement...', false);
+      setPoiDeleteStatus(poiDeleteContext && poiDeleteContext.successMessage ? poiDeleteContext.successMessage : 'Point supprimé. Rechargement...', false);
       closePoiDeleteOverlayPanel(true);
       window.location.reload();
     } catch (error) {
-      setPoiDeleteStatus('Impossible de supprimer ce point.', true);
+      setPoiDeleteStatus(poiDeleteContext && poiDeleteContext.errorMessage ? poiDeleteContext.errorMessage : 'Impossible de supprimer ce point.', true);
       setPoiDeleteBusy(false);
+    }
+  });
+}
+
+if (poiFolderRenameForm) {
+  poiFolderRenameForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    if (poiFolderRenameBusy || !poiFolderRenameAction) {
+      return;
+    }
+
+    const label = poiFolderRenameInput ? poiFolderRenameInput.value.trim() : '';
+    if (!label) {
+      setPoiFolderRenameStatus('Le nom du dossier est obligatoire.', true);
+      if (poiFolderRenameInput) {
+        poiFolderRenameInput.focus();
+      }
+      return;
+    }
+
+    setPoiFolderRenameBusy(true);
+    setPoiFolderRenameStatus('Renommage en cours...', false);
+
+    try {
+      await poiFolderRenameAction(label);
+      setPoiFolderRenameStatus('Dossier renommé. Rechargement...', false);
+      closePoiFolderRenameOverlayPanel(true);
+      window.location.reload();
+    } catch (error) {
+      setPoiFolderRenameStatus('Impossible de renommer ce dossier.', true);
+      setPoiFolderRenameBusy(false);
     }
   });
 }
@@ -624,6 +767,7 @@ window.poiAddBridge = {
   openModifyOverlay: openPoiModifyOverlay,
   close: closePoiAddOverlayPanel,
   openDeleteOverlay: openPoiDeleteOverlay,
+  openFolderRenameOverlay: openPoiFolderRenameOverlay,
 };
 
 // Sélection d'une carte

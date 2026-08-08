@@ -110,6 +110,7 @@ header {
 /* Overlay plein écran */
 #poiOverlay,
 #poiAddOverlay,
+#poiFolderRenameOverlay,
 #poiDeleteOverlay,
 #mapOverlay,
 #schOverlay {
@@ -138,12 +139,17 @@ header {
   overflow-y: auto;
 }
 
+#poiFolderRenameOverlay {
+  overflow-y: auto;
+}
+
 #poiDeleteOverlay {
   overflow-y: auto;
 }
 
 #poiOverlay.show,
 #poiAddOverlay.show,
+#poiFolderRenameOverlay.show,
 #poiDeleteOverlay.show,
 #mapOverlay.show,
 #schOverlay.show {
@@ -394,22 +400,23 @@ header {
   background: transparent;
 }
 
-.poi-file {
+.poi-folder {
   background: rgba(246,247,249,0.95);
   border-radius: 10px;
   border: 1px solid rgba(0,0,0,0.08);
   overflow: hidden;
 }
 
-.poi-file-header {
+.poi-folder-header {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 14px;
+  padding: 12px 10px 12px 14px;
   cursor: pointer;
 }
 
 .poi-folder-toggle,
+.poi-folder-menu-toggle,
 .poi-point-eye {
   appearance: none;
   -webkit-appearance: none;
@@ -432,12 +439,49 @@ header {
   line-height: 1;
 }
 
-.poi-file-meta {
+.poi-folder-menu-toggle {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  line-height: 1;
+  color: #1f77b1;
+}
+
+.poi-folder-actions {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  margin-left: auto;
+  margin-right: 2px;
+  flex: 0 0 auto;
+}
+
+.poi-folder-menu {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 4000;
+  min-width: 146px;
+  padding: 6px;
+  background: #f0f1f3;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14);
+}
+
+.poi-folder-menu[hidden] {
+  display: none;
+}
+
+.poi-folder-meta {
   min-width: 0;
   flex: 1;
 }
 
-.poi-file-title {
+.poi-folder-title {
   font-size: 17px;
   font-weight: 700;
   color: #222;
@@ -446,7 +490,7 @@ header {
   text-overflow: ellipsis;
 }
 
-.poi-file-count {
+.poi-folder-count {
   margin-top: 2px;
   font-size: 12px;
   color: #666;
@@ -553,6 +597,9 @@ header {
 .poi-point-menu-toggle {
   width: 30px;
   height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 24px;
   line-height: 1;
   cursor: pointer;
@@ -577,7 +624,8 @@ header {
   pointer-events: auto;
 }
 
-.poi-point-menu-item {
+.poi-point-menu-item,
+.poi-folder-menu-item {
   display: block;
   width: 100%;
   border: none;
@@ -591,16 +639,21 @@ header {
 }
 
 .poi-point-menu-item:hover,
-.poi-point-menu-item:focus-visible {
+.poi-point-menu-item:focus-visible,
+.poi-folder-menu-item:hover,
+.poi-folder-menu-item:focus-visible {
   background: rgba(31, 119, 177, 0.08);
 }
 
-.poi-point-menu-item.is-danger {
+.poi-point-menu-item.is-danger,
+.poi-folder-menu-item.is-danger {
   color: #b42318;
 }
 
 .poi-point-menu-item.is-danger:hover,
-.poi-point-menu-item.is-danger:focus-visible {
+.poi-point-menu-item.is-danger:focus-visible,
+.poi-folder-menu-item.is-danger:hover,
+.poi-folder-menu-item.is-danger:focus-visible {
   background: rgba(180, 35, 24, 0.08);
 }
 
@@ -741,7 +794,12 @@ header {
 .poi-add-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
   margin-top: 2px;
+}
+
+#poiFolderRenameForm .poi-add-actions {
+  margin-top: 12px;
 }
 
 .poi-add-submit {
@@ -928,7 +986,9 @@ header {
 
 /* Fermer overlay */
 #poiAddOverlay #closePoiAddOverlay,
+#poiFolderRenameOverlay #closePoiFolderRenameOverlay,
 #poiDeleteOverlay #closePoiDeleteOverlay,
+#poiFolderRenameOverlay #closePoiFolderRenameOverlay,
 #poiOverlay #closePoiOverlay,
 #mapOverlay #closeMapOverlay,
 #schOverlay #closeSchOverlay {

@@ -20,6 +20,9 @@
   let openPointMenuKey = null;
   let pointMenuElement = null;
   let pointMenuAnchor = null;
+  let openFolderMenuKey = null;
+  let folderMenuElement = null;
+  let folderMenuAnchor = null;
 
   function readPersistedState() {
     try {
@@ -86,6 +89,12 @@
       '<button class="poi-point-menu-item is-danger" type="button" data-point-action="delete">Supprimer</button>';
   }
 
+  function createFolderMenuContent() {
+    return '' +
+      '<button class="poi-folder-menu-item" type="button" data-folder-action="rename">Renommer</button>' +
+      '<button class="poi-folder-menu-item is-danger" type="button" data-folder-action="delete">Supprimer</button>';
+  }
+
   function ensurePointMenuElement() {
     if (pointMenuElement) {
       return pointMenuElement;
@@ -99,6 +108,21 @@
     overlay.appendChild(pointMenuElement);
 
     return pointMenuElement;
+  }
+
+  function ensureFolderMenuElement() {
+    if (folderMenuElement) {
+      return folderMenuElement;
+    }
+
+    folderMenuElement = document.createElement('div');
+    folderMenuElement.className = 'poi-folder-menu poi-point-menu-floating';
+    folderMenuElement.hidden = true;
+    folderMenuElement.setAttribute('role', 'menu');
+    folderMenuElement.innerHTML = createFolderMenuContent();
+    overlay.appendChild(folderMenuElement);
+
+    return folderMenuElement;
   }
 
   function resolvePointMenuPosition(button) {
@@ -131,6 +155,10 @@
     return fileKey + '::' + pointId;
   }
 
+  function makeFolderMenuKey(fileKey) {
+    return fileKey;
+  }
+
   function closePointMenu() {
     if (pointMenuAnchor) {
       pointMenuAnchor.setAttribute('aria-expanded', 'false');
@@ -142,6 +170,19 @@
 
     openPointMenuKey = null;
     pointMenuAnchor = null;
+  }
+
+  function closeFolderMenu() {
+    if (folderMenuAnchor) {
+      folderMenuAnchor.setAttribute('aria-expanded', 'false');
+    }
+
+    if (folderMenuElement) {
+      folderMenuElement.hidden = true;
+    }
+
+    openFolderMenuKey = null;
+    folderMenuAnchor = null;
   }
 
   function openPointMenu(fileKey, pointId, triggerButton) {
@@ -179,6 +220,67 @@
     openPointMenu(fileKey, pointId, triggerButton);
   }
 
+  function resolveFolderMenuPosition(button) {
+    const menu = ensureFolderMenuElement();
+    const buttonRect = button.getBoundingClientRect();
+    const menuRect = menu.getBoundingClientRect();
+    const overlayRect = overlay.getBoundingClientRect();
+    const margin = 8;
+    const gap = 6;
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+    const overlayScrollLeft = overlay.scrollLeft || 0;
+    const overlayScrollTop = overlay.scrollTop || 0;
+
+    let left = buttonRect.right - menuRect.width;
+    left = Math.max(margin, Math.min(left, viewportWidth - menuRect.width - margin));
+
+    let top = buttonRect.bottom + gap;
+    if (top + menuRect.height > viewportHeight - margin) {
+      top = buttonRect.top - gap - menuRect.height;
+    }
+
+    top = Math.max(margin, Math.min(top, viewportHeight - menuRect.height - margin));
+
+    menu.style.left = Math.round(left - overlayRect.left + overlayScrollLeft) + 'px';
+    menu.style.top = Math.round(top - overlayRect.top + overlayScrollTop) + 'px';
+  }
+
+  function openFolderMenu(fileKey, triggerButton) {
+    if (!overlay || !triggerButton) return;
+
+    closePointMenu();
+    closeFolderMenu();
+
+    const row = overlay.querySelector('.poi-folder[data-file="' + escapeSelectorValue(fileKey) + '"]');
+    if (!row) return;
+
+    const button = row.querySelector('.poi-folder-menu-toggle');
+    const menu = ensureFolderMenuElement();
+
+    if (button) {
+      button.setAttribute('aria-expanded', 'true');
+    }
+
+    menu.innerHTML = createFolderMenuContent();
+    menu.hidden = false;
+    resolveFolderMenuPosition(triggerButton);
+
+    openFolderMenuKey = makeFolderMenuKey(fileKey);
+    folderMenuAnchor = button || triggerButton;
+  }
+
+  function toggleFolderMenu(fileKey, triggerButton) {
+    const rowKey = makeFolderMenuKey(fileKey);
+
+    if (openFolderMenuKey === rowKey) {
+      closeFolderMenu();
+      return;
+    }
+
+    openFolderMenu(fileKey, triggerButton);
+  }
+
   function cloneStateForFile(fileKey) {
     const catalogEntry = poiCatalog.find(entry => entry.file === fileKey);
     const persisted = readPersistedState()[fileKey] || {};
@@ -213,7 +315,7 @@
   }
 
   function updateVisibilityCount(fileKey) {
-    const container = overlay ? overlay.querySelector('.poi-file[data-file="' + escapeSelectorValue(fileKey) + '"]') : null;
+    const container = overlay ? overlay.querySelector('.poi-folder[data-file="' + escapeSelectorValue(fileKey) + '"]') : null;
     if (!container) return;
 
     const entry = getFileEntry(fileKey);
@@ -236,7 +338,7 @@
   }
 
   function applyFolderVisibilityToDom(fileKey) {
-    const container = overlay ? overlay.querySelector('.poi-file[data-file="' + escapeSelectorValue(fileKey) + '"]') : null;
+    const container = overlay ? overlay.querySelector('.poi-folder[data-file="' + escapeSelectorValue(fileKey) + '"]') : null;
     const state = getFileState(fileKey);
     if (!container || !state) return;
 
@@ -339,6 +441,10 @@
       file: fileKey,
       pointId: pointId,
       label: pointState.label || '',
+      coords: {
+        lat: pointState.lat,
+        lng: pointState.lng,
+      },
     });
   }
 
@@ -367,7 +473,7 @@
   }
 
   function renderPointRows(fileKey, points, options = {}) {
-    const container = overlay ? overlay.querySelector('.poi-file[data-file="' + escapeSelectorValue(fileKey) + '"]') : null;
+    const container = overlay ? overlay.querySelector('.poi-folder[data-file="' + escapeSelectorValue(fileKey) + '"]') : null;
     const state = getFileState(fileKey);
     if (!container || !state) return;
 
@@ -524,7 +630,7 @@
 
     const nextExpanded = !state.expanded;
 
-    const container = overlay ? overlay.querySelector('.poi-file[data-file="' + escapeSelectorValue(fileKey) + '"]') : null;
+    const container = overlay ? overlay.querySelector('.poi-folder[data-file="' + escapeSelectorValue(fileKey) + '"]') : null;
     if (container) {
       const list = container.querySelector('.poi-point-list');
       if (list) {
@@ -572,9 +678,85 @@
     persistFileState(fileKey);
   }
 
+  async function renameFolder(fileKey) {
+    const entry = getFileEntry(fileKey);
+    const currentLabel = entry && entry.label ? entry.label : fileKey.replace(/\.gpx$/i, '');
+    if (!window.poiAddBridge || typeof window.poiAddBridge.openFolderRenameOverlay !== 'function') {
+      return;
+    }
+
+    closeFolderMenu();
+
+    window.poiAddBridge.openFolderRenameOverlay({
+      file: fileKey,
+      label: currentLabel,
+    }, async function (newLabel) {
+      const response = await fetch('/index.php?action=rename-folder', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          file: fileKey,
+          newName: newLabel,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Action impossible');
+      }
+    });
+  }
+
+  async function deleteFolder(fileKey) {
+    const entry = getFileEntry(fileKey);
+    const label = entry && entry.label ? entry.label : fileKey;
+    if (!window.poiAddBridge || typeof window.poiAddBridge.openDeleteOverlay !== 'function') {
+      return;
+    }
+
+    closeFolderMenu();
+
+    window.poiAddBridge.openDeleteOverlay({
+      type: 'folder',
+      file: fileKey,
+      label: label,
+      successMessage: 'Dossier supprimé. Rechargement...',
+      errorMessage: 'Impossible de supprimer ce dossier.',
+      busyMessage: 'Suppression en cours...',
+    }, async function () {
+      const response = await fetch('/index.php?action=delete-folder', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          file: fileKey,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Action impossible');
+      }
+    });
+  }
+
   document.addEventListener('click', function (event) {
+    const folderMenuToggle = event.target.closest('.poi-folder-menu-toggle');
+    if (folderMenuToggle && overlay && overlay.contains(folderMenuToggle)) {
+      closePointMenu();
+      const fileNode = folderMenuToggle.closest('.poi-folder');
+      if (fileNode && fileNode.dataset.file) {
+        toggleFolderMenu(fileNode.dataset.file, folderMenuToggle);
+      }
+      return;
+    }
+
     const pointMenuToggle = event.target.closest('.poi-point-menu-toggle');
     if (pointMenuToggle && overlay && overlay.contains(pointMenuToggle)) {
+      closeFolderMenu();
       const pointNode = pointMenuToggle.closest('.poi-point');
       if (pointNode && pointNode.dataset.pointKey) {
         const [fileKey, ...pointIdParts] = pointNode.dataset.pointKey.split('::');
@@ -585,6 +767,7 @@
 
     const pointMenuAction = event.target.closest('.poi-point-menu [data-point-action]');
     if (pointMenuAction && pointMenuElement && pointMenuElement.contains(pointMenuAction)) {
+      closeFolderMenu();
       const [fileKey, pointId] = openPointMenuKey ? openPointMenuKey.split('::') : ['',''];
 
       if (pointMenuAction.dataset.pointAction === 'modify') {
@@ -599,24 +782,52 @@
       return;
     }
 
+    const folderMenuAction = event.target.closest('.poi-folder-menu [data-folder-action]');
+    if (folderMenuAction && folderMenuElement && folderMenuElement.contains(folderMenuAction)) {
+      const fileKey = openFolderMenuKey || '';
+
+      if (folderMenuAction.dataset.folderAction === 'rename') {
+        renameFolder(fileKey).catch(function () {
+          console.error('Impossible de renommer ce dossier.');
+        });
+      }
+
+      if (folderMenuAction.dataset.folderAction === 'delete') {
+        deleteFolder(fileKey).catch(function () {
+          console.error('Impossible de supprimer ce dossier.');
+        });
+      }
+      return;
+    }
+
     if (openPointMenuKey && !event.target.closest('.poi-point-menu') && !event.target.closest('.poi-point-menu-toggle')) {
       closePointMenu();
     }
 
+    if (openFolderMenuKey && !event.target.closest('.poi-folder-menu') && !event.target.closest('.poi-folder-menu-toggle')) {
+      closeFolderMenu();
+    }
+
     const folderButton = event.target.closest('.poi-folder-toggle');
     if (folderButton && overlay && overlay.contains(folderButton)) {
+      closeFolderMenu();
       closePointMenu();
-      const fileNode = folderButton.closest('.poi-file');
+      const fileNode = folderButton.closest('.poi-folder');
       if (fileNode && fileNode.dataset.file) {
         toggleFolderVisibility(fileNode.dataset.file);
       }
       return;
     }
 
-    const fileHeader = event.target.closest('.poi-file-header');
+    const fileHeader = event.target.closest('.poi-folder-header');
     if (fileHeader && overlay && overlay.contains(fileHeader)) {
+      if (event.target.closest('.poi-folder-menu-toggle') || event.target.closest('.poi-folder-menu')) {
+        return;
+      }
+
       closePointMenu();
-      const fileNode = fileHeader.closest('.poi-file');
+      closeFolderMenu();
+      const fileNode = fileHeader.closest('.poi-folder');
       if (fileNode && fileNode.dataset.file && !event.target.closest('.poi-folder-toggle')) {
         toggleFolderExpansion(fileNode.dataset.file);
       }
@@ -627,7 +838,7 @@
     if (eyeButton && overlay && overlay.contains(eyeButton)) {
       closePointMenu();
       const pointNode = eyeButton.closest('.poi-point');
-      const fileNode = eyeButton.closest('.poi-file');
+      const fileNode = eyeButton.closest('.poi-folder');
       if (pointNode && fileNode && fileNode.dataset.file && pointNode.dataset.pointId) {
         togglePoint(fileNode.dataset.file, pointNode.dataset.pointId);
       }
@@ -637,6 +848,7 @@
   document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') {
       closePointMenu();
+      closeFolderMenu();
     }
   });
 
@@ -644,11 +856,16 @@
     if (pointMenuElement && !pointMenuElement.hidden && pointMenuAnchor) {
       resolvePointMenuPosition(pointMenuAnchor);
     }
+
+    if (folderMenuElement && !folderMenuElement.hidden && folderMenuAnchor) {
+      resolveFolderMenuPosition(folderMenuAnchor);
+    }
   });
 
   document.addEventListener('scroll', function () {
-    if (openPointMenuKey) {
+    if (openPointMenuKey || openFolderMenuKey) {
       closePointMenu();
+      closeFolderMenu();
     }
   }, true);
 
