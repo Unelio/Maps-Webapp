@@ -230,6 +230,25 @@
     }
   }
 
+  function focusPoiPoint(data) {
+    if (!data) return;
+
+    var lat = Number(data.lat);
+    var lng = Number(data.lng);
+
+    if (Number.isNaN(lat) || Number.isNaN(lng)) return;
+
+    var latlng = [lat, lng];
+    var targetZoom = map && typeof map.getMaxZoom === 'function' && map.getMaxZoom() ? Math.min(map.getMaxZoom(), 16) : 16;
+    var marker = data.file && data.pointId && poiMarkers[data.file] ? poiMarkers[data.file][data.pointId] : null;
+
+    map.flyTo(latlng, targetZoom);
+
+    if (marker && map.hasLayer && map.hasLayer(marker) && typeof marker.openPopup === 'function') {
+      marker.openPopup();
+    }
+  }
+
   L.Control.Locate = L.Control.extend({
     onAdd: function () {
       var btn = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-locate');
@@ -321,6 +340,8 @@
       if (data.label) {
         searchMarker.openPopup();
       }
+    } else if (data.type === 'poiFocus') {
+      focusPoiPoint(data);
     } else if (data.type === 'poiSyncFile') {
       syncPoiFile(data);
     }

@@ -617,6 +617,27 @@
     });
   }
 
+  function focusPointOnMap(fileKey, pointId) {
+    if (!window.mapBridge || typeof window.mapBridge.postToIframe !== 'function') {
+      return;
+    }
+
+    const state = getFileState(fileKey);
+    const point = state && state.points ? state.points[pointId] : null;
+    if (!point) {
+      return;
+    }
+
+    window.mapBridge.postToIframe({
+      type: 'poiFocus',
+      file: fileKey,
+      pointId: pointId,
+      lat: point.lat,
+      lng: point.lng,
+      label: point.label || '',
+    });
+  }
+
   function syncAllPoiFiles() {
     ensureState();
     poiCatalog.forEach(entry => {
@@ -841,6 +862,22 @@
       const fileNode = eyeButton.closest('.poi-folder');
       if (pointNode && fileNode && fileNode.dataset.file && pointNode.dataset.pointId) {
         togglePoint(fileNode.dataset.file, pointNode.dataset.pointId);
+      }
+      return;
+    }
+
+    const pointRow = event.target.closest('.poi-point');
+    if (pointRow && overlay && overlay.contains(pointRow)) {
+      if (event.target.closest('.poi-point-eye') || event.target.closest('.poi-point-menu-toggle') || event.target.closest('.poi-point-menu')) {
+        return;
+      }
+
+      const fileNode = pointRow.closest('.poi-folder');
+      if (fileNode && fileNode.dataset.file && pointRow.dataset.pointId) {
+        focusPointOnMap(fileNode.dataset.file, pointRow.dataset.pointId);
+        closePointMenu();
+        closeFolderMenu();
+        overlay.classList.remove('show');
       }
     }
   });
